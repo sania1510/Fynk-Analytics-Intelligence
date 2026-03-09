@@ -1,0 +1,2340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fynk · Analytics Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --void:#020408;--deep:#050d15;--panel:#07111d;--card:#091422;--hover:#0d1e32;
+  --b1:rgba(0,200,255,.1);--b2:rgba(0,200,255,.25);--b3:rgba(0,200,255,.6);
+  --cyan:#00c8ff;--cyan2:#00eeff;--green:#00ff88;--red:#ff3366;
+  --orange:#ff8c00;--purple:#c084fc;--yellow:#ffd700;
+  --t1:#e8f4ff;--t2:rgba(180,220,255,.65);--t3:rgba(100,160,200,.4);
+  --fh:'Orbitron',monospace;--fb:'Rajdhani',sans-serif;--fm:'Share Tech Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--t1);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,200,255,.006) 3px,rgba(0,200,255,.006) 4px);pointer-events:none;z-index:9999}
+
+/* ── LAYOUT ── */
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:rgba(5,13,21,.97);border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:300;backdrop-filter:blur(20px);
+}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan) 30%,var(--cyan2) 50%,var(--cyan) 70%,transparent);
+  animation:hglow 5s ease-in-out infinite}
+@keyframes hglow{0%,100%{opacity:.3}50%{opacity:.8}}
+
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-gem{
+  width:30px;height:30px;
+  background:conic-gradient(from 0deg,var(--cyan),var(--purple),var(--cyan));
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  animation:gemrot 12s linear infinite;
+}
+@keyframes gemrot{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+.logo-name{font-family:var(--fh);font-size:15px;font-weight:900;letter-spacing:5px;
+  background:linear-gradient(90deg,var(--cyan),#fff);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.logo-tagline{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--t3);margin-top:-2px}
+
+.sys-status{display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sys-txt{font-family:var(--fm);font-size:10px;color:var(--t2);letter-spacing:1px}
+
+.topbar-right{display:flex;align-items:center;gap:10px}
+.api-badge{
+  font-family:var(--fm);font-size:10px;color:var(--t3);padding:4px 10px;
+  border:1px solid var(--b1);border-radius:4px;background:var(--deep);
+}
+.btn-health{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;
+  border:1px solid rgba(0,255,136,.2);border-radius:20px;cursor:pointer;
+  font-family:var(--fm);font-size:10px;color:var(--green);background:rgba(0,255,136,.05);
+  transition:all .25s;
+}
+.btn-health:hover{border-color:rgba(0,255,136,.5);background:rgba(0,255,136,.1)}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  background:var(--deep);border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;padding:14px 0;
+  position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;
+}
+.sidebar::-webkit-scrollbar{width:2px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--b1)}
+
+.nav-sect{padding:0 10px;margin-bottom:16px}
+.nav-sect-label{font-family:var(--fh);font-size:7px;letter-spacing:3px;color:var(--t3);
+  padding:0 8px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.nav-sect-label::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+.nav-btn{
+  display:flex;align-items:center;gap:9px;padding:9px 10px;
+  border-radius:7px;cursor:pointer;transition:all .2s;
+  font-size:13px;font-weight:600;color:var(--t2);
+  border:1px solid transparent;position:relative;margin-bottom:2px;
+}
+.nav-btn:hover{background:var(--hover);color:var(--t1)}
+.nav-btn.active{background:rgba(0,200,255,.07);color:var(--cyan);border-color:var(--b1)}
+.nav-btn.active::before{content:'';position:absolute;left:-2px;top:25%;bottom:25%;
+  width:3px;border-radius:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.nav-ico{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-lbl{flex:1}
+.nav-chip{font-family:var(--fm);font-size:8px;padding:2px 6px;border-radius:10px;
+  background:rgba(0,200,255,.12);color:var(--cyan);border:1px solid var(--b1)}
+
+.sidebar-div{height:1px;background:var(--b1);margin:8px 14px}
+.sidebar-bot{margin-top:auto;padding:12px 14px;font-family:var(--fm);font-size:9px;color:var(--t3);line-height:2}
+.sidebar-bot b{color:var(--green)}
+
+/* ── MAIN ── */
+.main{background:var(--void);padding:22px;overflow-y:auto;min-height:0}
+
+/* ── PAGES ── */
+.page{display:none}
+.page.active{display:block;animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.ph{margin-bottom:22px}
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ph-title{font-family:var(--fh);font-size:20px;font-weight:700;letter-spacing:2px;
+  background:linear-gradient(90deg,var(--t1),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ph-sub{font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:1px;margin-top:4px}
+.ph-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:6px;border:1px solid;font-family:var(--fb);font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.btn-p{background:rgba(0,200,255,.1);color:var(--cyan);border-color:var(--b2)}
+.btn-p:hover{background:rgba(0,200,255,.2);box-shadow:0 0 20px rgba(0,200,255,.15)}
+.btn-g{background:transparent;color:var(--t2);border-color:var(--b1)}
+.btn-g:hover{background:var(--hover);color:var(--t1)}
+.btn-red{background:rgba(255,51,102,.08);color:var(--red);border-color:rgba(255,51,102,.25)}
+.btn-red:hover{background:rgba(255,51,102,.15)}
+.btn-grn{background:rgba(0,255,136,.08);color:var(--green);border-color:rgba(0,255,136,.25)}
+.btn-grn:hover{background:rgba(0,255,136,.15)}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:10px;
+  padding:20px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,200,255,.025) 0%,transparent 50%);pointer-events:none}
+.ctitle{font-family:var(--fh);font-size:9px;letter-spacing:3px;color:var(--t3);
+  text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.ctitle::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--b1);border-radius:10px;
+  padding:18px;position:relative;overflow:hidden;cursor:default;transition:all .25s}
+.kpi:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--kc,var(--cyan)),transparent)}
+.kpi.g{--kc:var(--green)}.kpi.r{--kc:var(--red)}.kpi.o{--kc:var(--orange)}.kpi.v{--kc:var(--purple)}
+.kpi-ico{position:absolute;right:14px;top:14px;font-size:26px;opacity:.13}
+.kpi-lbl{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--t3);margin-bottom:6px}
+.kpi-val{font-family:var(--fh);font-size:24px;font-weight:700;color:var(--t1);line-height:1;margin-bottom:6px}
+.kpi-chg{display:inline-flex;align-items:center;gap:4px;font-size:11px;
+  font-weight:700;padding:2px 7px;border-radius:4px}
+.up{color:var(--green);background:rgba(0,255,136,.1)}
+.dn{color:var(--red);background:rgba(255,51,102,.1)}
+.fl{color:var(--t3);background:var(--hover)}
+
+/* ── CHARTS ── */
+.cg2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
+.cg22{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.cwrap{background:var(--card);border:1px solid var(--b1);border-radius:10px;padding:18px}
+.cwrap .chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-family:var(--fh);font-size:10px;letter-spacing:2px;color:var(--t2)}
+.ctabs{display:flex;gap:4px}
+.ctab{padding:3px 9px;border-radius:4px;border:1px solid var(--b1);
+  font-size:9px;font-family:var(--fm);color:var(--t3);cursor:pointer;transition:all .2s}
+.ctab.on,.ctab:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,.08)}
+
+/* ── UPLOAD ── */
+.upload-zone{
+  border:2px dashed var(--b1);border-radius:14px;padding:50px 30px;
+  text-align:center;cursor:pointer;transition:all .3s;background:var(--card);
+  position:relative;overflow:hidden;
+}
+.upload-zone:hover,.upload-zone.drag{
+  border-color:var(--b3);background:rgba(0,200,255,.03);
+  box-shadow:0 0 40px rgba(0,200,255,.06) inset;
+}
+.upload-zone::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 100%,rgba(0,200,255,.04),transparent 70%);
+  pointer-events:none;
+}
+.up-ico{font-size:52px;margin-bottom:14px;filter:drop-shadow(0 0 10px rgba(0,200,255,.3))}
+.up-title{font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:2px;
+  color:var(--t1);margin-bottom:8px}
+.up-sub{font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:1px;margin-bottom:16px}
+.fmt-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.fmt{padding:3px 12px;border-radius:14px;font-family:var(--fm);font-size:9px;
+  border:1px solid var(--b1);color:var(--t3)}
+input[type=file]{display:none}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--t3);
+  text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--b1);text-align:left}
+.tbl td{padding:11px 14px;border-bottom:1px solid rgba(14,42,64,.4);color:var(--t2);transition:.15s}
+.tbl tr:hover td{background:var(--hover);color:var(--t1)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* ── SCHEMA DISPLAY ── */
+.schema-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.scol{background:var(--deep);border:1px solid var(--b1);border-radius:8px;padding:12px;transition:all .2s}
+.scol:hover{border-color:var(--b2)}
+.scol-type{font-family:var(--fm);font-size:7px;letter-spacing:2px;margin-bottom:5px}
+.tc{color:var(--cyan)}.mc{color:var(--green)}.dc{color:var(--purple)}.uc{color:var(--t3)}
+.scol-name{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.scol-info{font-family:var(--fm);font-size:9px;color:var(--t3)}
+
+/* ── CONTROLS ── */
+.ctrl-bar{background:var(--card);border:1px solid var(--b1);border-radius:10px;
+  padding:14px 18px;margin-bottom:18px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.cg{display:flex;flex-direction:column;gap:4px}
+.cl{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+select,input[type=text],input[type=date]{
+  background:var(--deep);border:1px solid var(--b1);border-radius:6px;
+  padding:7px 11px;color:var(--t1);font-family:var(--fb);font-size:12px;
+  outline:none;transition:all .2s;min-width:130px;
+}
+select:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,200,255,.1)}
+select option{background:var(--panel)}
+
+/* ── INSIGHTS ── */
+.ins-list{display:flex;flex-direction:column;gap:8px}
+.ins-item{display:flex;gap:12px;padding:12px 14px;background:var(--deep);
+  border:1px solid var(--b1);border-radius:8px;transition:all .2s;align-items:flex-start}
+.ins-item:hover{border-color:var(--b2);background:var(--hover)}
+.ins-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;
+  box-shadow:0 0 6px currentColor}
+.ins-txt{font-size:13px;color:var(--t2);line-height:1.65}
+
+/* ── ANOMALY ── */
+.sev{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;
+  border-radius:4px;font-family:var(--fm);font-size:9px;font-weight:700}
+.sev-c{color:#ff1a44;background:rgba(255,26,68,.1);border:1px solid rgba(255,26,68,.25)}
+.sev-h{color:var(--orange);background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.25)}
+.sev-m{color:var(--yellow);background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.25)}
+.sev-l{color:var(--t2);background:var(--hover);border:1px solid var(--b1)}
+
+/* ── SEASON HEATMAP ── */
+.heatmap-grid{display:grid;gap:4px}
+.hm-row{display:flex;gap:4px;align-items:center}
+.hm-lbl{font-family:var(--fm);font-size:9px;color:var(--t3);width:36px;text-align:right;flex-shrink:0}
+.hm-cell{
+  flex:1;height:28px;border-radius:3px;cursor:default;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:8px;font-weight:700;
+}
+.hm-cell:hover{transform:scale(1.15);z-index:2;position:relative}
+
+/* ── CHATBOT ── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 140px);gap:0}
+.chat-history{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;
+  background:var(--card);border:1px solid var(--b1);border-radius:10px 10px 0 0;
+  scrollbar-width:thin;scrollbar-color:var(--b1) transparent}
+.chat-history::-webkit-scrollbar{width:4px}
+.chat-history::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+
+.msg{display:flex;gap:10px;max-width:85%;animation:fadein .25s ease}
+.msg.user{margin-left:auto;flex-direction:row-reverse}
+.msg-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  border:1px solid var(--b1);
+}
+.msg.user .msg-avatar{background:rgba(0,200,255,.15);border-color:var(--b2)}
+.msg.bot .msg-avatar{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3)}
+.msg-bubble{
+  padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.65;
+  max-width:100%;word-break:break-word;
+}
+.msg.user .msg-bubble{
+  background:rgba(0,200,255,.1);border:1px solid var(--b2);
+  border-top-right-radius:2px;color:var(--t1);
+}
+.msg.bot .msg-bubble{
+  background:var(--deep);border:1px solid var(--b1);
+  border-top-left-radius:2px;color:var(--t2);
+}
+.msg-time{font-family:var(--fm);font-size:8px;color:var(--t3);
+  margin-top:4px;text-align:right;}
+.msg.bot .msg-time{text-align:left}
+
+.chat-input-area{
+  background:var(--deep);border:1px solid var(--b1);border-top:none;
+  border-radius:0 0 10px 10px;padding:14px 16px;
+  display:flex;gap:10px;align-items:flex-end;
+}
+.chat-input{
+  flex:1;background:var(--card);border:1px solid var(--b1);border-radius:8px;
+  padding:10px 14px;color:var(--t1);font-family:var(--fb);font-size:13px;
+  resize:none;outline:none;transition:all .2s;line-height:1.5;min-height:42px;max-height:120px;
+}
+.chat-input:focus{border-color:var(--b2);box-shadow:0 0 0 2px rgba(0,200,255,.08)}
+.btn-send{
+  padding:10px 16px;background:rgba(0,200,255,.15);border:1px solid var(--b2);
+  border-radius:8px;color:var(--cyan);cursor:pointer;font-size:16px;
+  transition:all .2s;flex-shrink:0;
+}
+.btn-send:hover{background:rgba(0,200,255,.25);box-shadow:0 0 16px rgba(0,200,255,.2)}
+.btn-send:disabled{opacity:.3;cursor:not-allowed}
+
+.chat-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.sug{
+  padding:5px 11px;border:1px solid var(--b1);border-radius:14px;
+  font-size:11px;color:var(--t3);cursor:pointer;transition:all .2s;
+  font-family:var(--fm);background:var(--deep);
+}
+.sug:hover{border-color:var(--b2);color:var(--cyan);background:rgba(0,200,255,.05)}
+
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  animation:typingdot 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typingdot{0%,100%{transform:scale(.4);opacity:.3}50%{transform:scale(1);opacity:1}}
+
+/* ── TOAST ── */
+.toasts{position:fixed;top:64px;right:18px;z-index:9000;display:flex;flex-direction:column;gap:8px}
+.toast{
+  display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border-radius:8px;min-width:270px;max-width:360px;
+  background:var(--card);border:1px solid var(--b1);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:toastin .3s ease;font-size:12px;color:var(--t2);
+}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.er{border-left:3px solid var(--red)}
+.toast.inf{border-left:3px solid var(--cyan)}
+.toast.wa{border-left:3px solid var(--orange)}
+@keyframes toastin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── LOADER ── */
+.ldots span{display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--cyan);margin:0 2px;
+  animation:dotb 1.4s infinite ease-in-out}
+.ldots span:nth-child(2){animation-delay:.2s}
+.ldots span:nth-child(3){animation-delay:.4s}
+@keyframes dotb{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* ── PROGRESS ── */
+.prog{height:3px;background:var(--b1);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--cyan2));transition:width .8s ease}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 24px;color:var(--t3)}
+.empty-ico{font-size:52px;margin-bottom:16px;opacity:.35}
+.empty-title{font-family:var(--fh);font-size:15px;letter-spacing:2px;color:var(--t2);margin-bottom:8px}
+.empty-sub{font-family:var(--fm);font-size:10px;letter-spacing:1px}
+
+/* ── MISC ── */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;
+  font-family:var(--fm);font-size:8px;letter-spacing:1px;
+  background:rgba(0,200,255,.08);border:1px solid var(--b1);color:var(--cyan)}
+.badge-grn{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.2);color:var(--green)}
+.badge-red{background:rgba(255,51,102,.08);border-color:rgba(255,51,102,.2);color:var(--red)}
+.badge-pur{background:rgba(192,132,252,.08);border-color:rgba(192,132,252,.2);color:var(--purple)}
+.divider{height:1px;background:var(--b1);margin:16px 0}
+.flex{display:flex;align-items:center;gap:8px}
+.flex-b{display:flex;align-items:center;justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+.bold{font-weight:700}.mono{font-family:var(--fm)}
+.text-cyan{color:var(--cyan)}.text-grn{color:var(--green)}.text-red{color:var(--red)}
+.text-dim{color:var(--t3)}.text-sm{font-size:11px}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(2,4,8,.85);
+  z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex;animation:fadein .2s ease}
+.modal{background:var(--panel);border:1px solid var(--b2);border-radius:14px;
+  padding:28px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;position:relative}
+.modal-title{font-family:var(--fh);font-size:14px;letter-spacing:2px;color:var(--t1);margin-bottom:16px}
+.modal-close{position:absolute;top:16px;right:16px;cursor:pointer;color:var(--t3);
+  font-size:18px;transition:.2s}
+.modal-close:hover{color:var(--red)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .cg2,.cg22,.grid2,.grid3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════════ TOPBAR ══════════════ -->
+<header class="topbar">
+  <div class="logo" onclick="navigate('upload')">
+    <div class="logo-gem">⬡</div>
+    <div>
+      <div class="logo-name">Fynk</div>
+      <div class="logo-tagline">ANALYTICS INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="sys-status">
+    <div class="dot" id="sysDot"></div>
+    <span class="sys-txt" id="sysText">CONNECTING...</span>
+  </div>
+  <div class="topbar-right">
+    <div class="api-badge" id="apiUrlBadge">API: localhost:8000</div>
+    <div class="btn-health" onclick="checkHealth()">⬡ SYSTEM HEALTH</div>
+  </div>
+</header>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<nav class="sidebar">
+  <div class="nav-sect">
+    <div class="nav-sect-label">Data</div>
+    <div class="nav-btn active" id="nav-upload" onclick="navigate('upload')">
+      <span class="nav-ico">⬆</span><span class="nav-lbl">Upload Data</span>
+    </div>
+    <div class="nav-btn" id="nav-datasets" onclick="navigate('datasets')">
+      <span class="nav-ico">◈</span><span class="nav-lbl">Datasets</span>
+      <span class="nav-chip" id="dsCount">0</span>
+    </div>
+    <div class="nav-btn" id="nav-schema" onclick="navigate('schema')">
+      <span class="nav-ico">⬡</span><span class="nav-lbl">Schema</span>
+    </div>
+  </div>
+  <div class="sidebar-div"></div>
+  <div class="nav-sect">
+    <div class="nav-sect-label">Analytics</div>
+    <div class="nav-btn" id="nav-dashboard" onclick="navigate('dashboard')">
+      <span class="nav-ico">◉</span><span class="nav-lbl">Dashboard</span>
+    </div>
+    <div class="nav-btn" id="nav-timeseries" onclick="navigate('timeseries')">
+      <span class="nav-ico">⟋</span><span class="nav-lbl">Time Series</span>
+    </div>
+    <div class="nav-btn" id="nav-breakdown" onclick="navigate('breakdown')">
+      <span class="nav-ico">◫</span><span class="nav-lbl">Breakdown</span>
+    </div>
+    <div class="nav-btn" id="nav-forecast" onclick="navigate('forecast')">
+      <span class="nav-ico">◈</span><span class="nav-lbl">Forecast</span>
+    </div>
+    <div class="nav-btn" id="nav-anomalies" onclick="navigate('anomalies')">
+      <span class="nav-ico">⚠</span><span class="nav-lbl">Anomalies</span>
+    </div>
+    <div class="nav-btn" id="nav-seasonality" onclick="navigate('seasonality')">
+      <span class="nav-ico">◌</span><span class="nav-lbl">Seasonality</span>
+    </div>
+  </div>
+  <div class="sidebar-div"></div>
+  <div class="nav-sect">
+    <div class="nav-sect-label">Intelligence</div>
+    <div class="nav-btn" id="nav-insights" onclick="navigate('insights')">
+      <span class="nav-ico">✦</span><span class="nav-lbl">AI Insights</span>
+    </div>
+    <div class="nav-btn" id="nav-chat" onclick="navigate('chat')">
+      <span class="nav-ico">◎</span><span class="nav-lbl">Data Chat</span>
+      <span class="nav-chip" id="chatBadge" style="display:none">NEW</span>
+    </div>
+  </div>
+  <div class="sidebar-bot">
+    <div>BACKEND <b id="beStatus">OFFLINE</b></div>
+    <div>ML FORECAST <b id="mlStatus">—</b></div>
+    <div>AI INSIGHTS <b id="aiStatus">—</b></div>
+    <div>DATASET <b id="curDsName">—</b></div>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+<!-- ─── UPLOAD PAGE ─── -->
+<div class="page active" id="page-upload">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">UPLOAD DATA</div>
+        <div class="ph-sub">// DRAG & DROP OR CLICK TO UPLOAD · CSV / EXCEL / JSON</div>
+      </div>
+    </div>
+  </div>
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+       ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)" ondrop="handleDrop(event)">
+    <div class="up-ico">📡</div>
+    <div class="up-title">BEAM YOUR DATA IN</div>
+    <div class="up-sub">// DROP FILE HERE OR CLICK TO BROWSE FILESYSTEM</div>
+    <div class="fmt-chips">
+      <span class="fmt">.CSV</span><span class="fmt">.XLSX</span>
+      <span class="fmt">.XLS</span><span class="fmt">.JSON</span>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" onchange="handleFileSelect(event)"/>
+
+  <div id="uploadProgress" style="display:none;margin-top:18px">
+    <div class="card">
+      <div class="flex-b mb12">
+        <span class="mono text-dim" id="uploadFileName" style="font-size:12px"></span>
+        <div class="ldots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="prog"><div class="prog-fill" id="uploadProgFill" style="width:0%"></div></div>
+      <div class="text-dim mono mt12" style="font-size:10px" id="uploadStatus">Initializing...</div>
+    </div>
+  </div>
+
+  <div id="uploadResult" style="display:none;margin-top:18px">
+    <div class="card">
+      <div class="ctitle">UPLOAD RESULT</div>
+      <div class="grid2">
+        <div>
+          <div class="text-dim mono" style="font-size:9px;letter-spacing:2px;margin-bottom:4px">DATASET ID</div>
+          <div class="bold mono text-cyan" id="res-dsid" style="font-size:13px"></div>
+        </div>
+        <div>
+          <div class="text-dim mono" style="font-size:9px;letter-spacing:2px;margin-bottom:4px">ROWS LOADED</div>
+          <div class="bold text-grn" style="font-size:22px;font-family:var(--fh)" id="res-rows"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="text-dim mono" style="font-size:9px;letter-spacing:2px;margin-bottom:8px">COLUMNS DETECTED</div>
+      <div id="res-cols" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div class="mt16" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="navigate('schema')">⬡ VIEW SCHEMA</button>
+        <button class="btn btn-grn" onclick="navigate('dashboard')">◉ OPEN DASHBOARD</button>
+        <button class="btn btn-g" onclick="navigate('chat')">◎ CHAT WITH DATA</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DATASETS PAGE ─── -->
+<div class="page" id="page-datasets">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">DATASETS</div>
+        <div class="ph-sub">// ALL LOADED DATASETS IN MEMORY</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-g btn-sm" onclick="loadDatasets()">↺ REFRESH</button>
+        <button class="btn btn-p btn-sm" onclick="navigate('upload')">+ UPLOAD NEW</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div id="datasetsBody">
+      <div class="empty"><div class="empty-ico">◈</div>
+        <div class="empty-title">NO DATASETS LOADED</div>
+        <div class="empty-sub">// UPLOAD A FILE TO BEGIN ANALYSIS</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCHEMA PAGE ─── -->
+<div class="page" id="page-schema">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">SCHEMA INTEL</div>
+        <div class="ph-sub">// AUTO-DETECTED SEMANTIC SCHEMA</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-g btn-sm" onclick="loadSchema()">↺ REFRESH</button>
+      </div>
+    </div>
+  </div>
+  <div id="schemaBody">
+    <div class="empty"><div class="empty-ico">⬡</div>
+      <div class="empty-title">NO SCHEMA DETECTED</div>
+      <div class="empty-sub">// UPLOAD A DATASET FIRST</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DASHBOARD PAGE ─── -->
+<div class="page" id="page-dashboard">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">MISSION CONTROL</div>
+        <div class="ph-sub">// FULL-SPECTRUM ANALYTICS DASHBOARD</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="loadDashboard()">⟳ REFRESH ALL</button>
+        <button class="btn btn-g btn-sm" onclick="navigate('insights')">✦ AI INSIGHTS</button>
+      </div>
+    </div>
+  </div>
+  <div id="dashboardBody">
+    <div class="empty"><div class="empty-ico">◉</div>
+      <div class="empty-title">DASHBOARD OFFLINE</div>
+      <div class="empty-sub">// UPLOAD & SELECT A DATASET TO POWER UP</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TIME SERIES PAGE ─── -->
+<div class="page" id="page-timeseries">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">TIME SERIES</div>
+        <div class="ph-sub">// HISTORICAL TREND ANALYSIS · 100% ACCURATE</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="runTimeSeries()">▶ RUN ANALYSIS</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">GRANULARITY</div>
+      <select id="ts-gran"><option value="day">DAY</option><option value="week">WEEK</option>
+        <option value="month">MONTH</option><option value="quarter">QUARTER</option></select></div>
+    <div class="cg"><div class="cl">START DATE</div><input type="date" id="ts-start"/></div>
+    <div class="cg"><div class="cl">END DATE</div><input type="date" id="ts-end"/></div>
+    <div class="cg"><div class="cl">METRICS</div>
+      <select id="ts-metrics" multiple style="min-height:34px"><option>Loading...</option></select></div>
+    <button class="btn btn-p" onclick="runTimeSeries()" style="align-self:flex-end">▶ ANALYZE</button>
+  </div>
+  <div id="tsBody">
+    <div class="empty"><div class="empty-ico">⟋</div>
+      <div class="empty-title">AWAITING ANALYSIS</div>
+      <div class="empty-sub">// CONFIGURE PARAMETERS AND RUN</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── BREAKDOWN PAGE ─── -->
+<div class="page" id="page-breakdown">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">DIMENSION BREAKDOWN</div>
+        <div class="ph-sub">// METRICS SEGMENTED BY CATEGORY</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="runBreakdown()">▶ RUN</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">DIMENSION</div>
+      <select id="bd-dim"><option>Loading...</option></select></div>
+    <div class="cg"><div class="cl">TOP N</div>
+      <select id="bd-topn"><option value="5">TOP 5</option><option value="10" selected>TOP 10</option>
+        <option value="20">TOP 20</option></select></div>
+    <button class="btn btn-p" onclick="runBreakdown()" style="align-self:flex-end">▶ ANALYZE</button>
+  </div>
+  <div id="bdBody">
+    <div class="empty"><div class="empty-ico">◫</div>
+      <div class="empty-title">SELECT DIMENSION TO ANALYZE</div>
+      <div class="empty-sub">// CHOOSE A DIMENSION AND RUN</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── FORECAST PAGE ─── -->
+<div class="page" id="page-forecast">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">FORECAST ENGINE</div>
+        <div class="ph-sub">// ML-POWERED PREDICTIONS · PROPHET / LINEAR TREND</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="runForecast()">▶ FORECAST</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">METRIC</div>
+      <select id="fc-metric"><option>Loading...</option></select></div>
+    <div class="cg"><div class="cl">PERIODS AHEAD</div>
+      <select id="fc-periods">
+        <option value="7">7 DAYS</option><option value="14">14 DAYS</option>
+        <option value="30" selected>30 DAYS</option><option value="60">60 DAYS</option>
+        <option value="90">90 DAYS</option></select></div>
+    <div class="cg"><div class="cl">CONFIDENCE</div>
+      <select id="fc-conf">
+        <option value="0.8">80%</option><option value="0.95" selected>95%</option></select></div>
+    <button class="btn btn-p" onclick="runForecast()" style="align-self:flex-end">▶ FORECAST</button>
+  </div>
+  <div id="fcBody">
+    <div class="empty"><div class="empty-ico">◈</div>
+      <div class="empty-title">FORECAST NOT INITIALIZED</div>
+      <div class="empty-sub">// SELECT METRIC AND RUN FORECAST</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ANOMALIES PAGE ─── -->
+<div class="page" id="page-anomalies">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">ANOMALY DETECTION</div>
+        <div class="ph-sub">// Z-SCORE STATISTICAL OUTLIER IDENTIFICATION</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="runAnomalies()">▶ SCAN</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">METRIC</div>
+      <select id="an-metric"><option>Loading...</option></select></div>
+    <div class="cg"><div class="cl">SENSITIVITY</div>
+      <select id="an-sens">
+        <option value="1.5">HIGH (1.5σ)</option>
+        <option value="2.0" selected>MEDIUM (2.0σ)</option>
+        <option value="3.0">LOW (3.0σ)</option></select></div>
+    <div class="cg"><div class="cl">MIN SCORE</div>
+      <select id="an-score">
+        <option value="0.5">0.5</option><option value="0.7" selected>0.7</option>
+        <option value="0.9">0.9</option></select></div>
+    <button class="btn btn-p" onclick="runAnomalies()" style="align-self:flex-end">▶ SCAN</button>
+  </div>
+  <div id="anBody">
+    <div class="empty"><div class="empty-ico">⚠</div>
+      <div class="empty-title">DETECTOR STANDBY</div>
+      <div class="empty-sub">// CONFIGURE AND LAUNCH SCAN</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SEASONALITY PAGE ─── -->
+<div class="page" id="page-seasonality">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">SEASONALITY PATTERNS</div>
+        <div class="ph-sub">// DAY-OF-WEEK & MONTHLY BEHAVIORAL CYCLES</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-p btn-sm" onclick="runSeasonality()">▶ ANALYZE</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">METRIC</div>
+      <select id="se-metric"><option>Loading...</option></select></div>
+    <button class="btn btn-p" onclick="runSeasonality()" style="align-self:flex-end">▶ ANALYZE</button>
+  </div>
+  <div id="seBody">
+    <div class="empty"><div class="empty-ico">◌</div>
+      <div class="empty-title">PATTERN SCANNER IDLE</div>
+      <div class="empty-sub">// SELECT METRIC AND LAUNCH PATTERN SCAN</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── INSIGHTS PAGE ─── -->
+<div class="page" id="page-insights">
+  <div class="ph">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">AI INSIGHTS</div>
+        <div class="ph-sub">// GEMINI-POWERED NATURAL LANGUAGE INTELLIGENCE</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-g btn-sm" id="insightTypeBtn" onclick="toggleInsightType()">MODE: DETAILED</button>
+        <button class="btn btn-p btn-sm" onclick="generateInsights()">✦ GENERATE</button>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-bar">
+    <div class="cg"><div class="cl">ANALYSIS TYPE</div>
+      <select id="ins-type">
+        <option value="kpi">KPI ANALYSIS</option>
+        <option value="time_series">TIME SERIES</option>
+        <option value="dimension_breakdown">DIMENSION BREAKDOWN</option>
+        <option value="forecast">FORECAST</option>
+        <option value="anomaly_detection">ANOMALY DETECTION</option>
+        <option value="seasonality">SEASONALITY</option>
+      </select></div>
+    <div class="cg"><div class="cl">METRIC</div>
+      <select id="ins-metric"><option>Loading...</option></select></div>
+    <button class="btn btn-p" onclick="generateInsights()" style="align-self:flex-end">✦ GENERATE INSIGHTS</button>
+  </div>
+  <div id="insBody">
+    <div class="empty"><div class="empty-ico">✦</div>
+      <div class="empty-title">AI INTELLIGENCE OFFLINE</div>
+      <div class="empty-sub">// SELECT ANALYSIS TYPE AND GENERATE INSIGHTS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CHAT PAGE ─── -->
+<div class="page" id="page-chat">
+  <div class="ph" style="margin-bottom:14px">
+    <div class="ph-row">
+      <div>
+        <div class="ph-title">DATA CHAT</div>
+        <div class="ph-sub">// ASK ANYTHING ABOUT YOUR DATA · AI-POWERED ANALYST</div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn btn-g btn-sm" onclick="clearChat()">✕ CLEAR</button>
+      </div>
+    </div>
+  </div>
+  <div class="chat-suggestions" id="chatSugs">
+    <span class="sug" onclick="sendSuggestion(this)">What are my top KPIs?</span>
+    <span class="sug" onclick="sendSuggestion(this)">Show revenue trends</span>
+    <span class="sug" onclick="sendSuggestion(this)">Any anomalies detected?</span>
+    <span class="sug" onclick="sendSuggestion(this)">Forecast next 30 days</span>
+    <span class="sug" onclick="sendSuggestion(this)">Which dimension drives most value?</span>
+    <span class="sug" onclick="sendSuggestion(this)">Best performing day of week?</span>
+    <span class="sug" onclick="sendSuggestion(this)">Executive summary</span>
+    <span class="sug" onclick="sendSuggestion(this)">Data quality report</span>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-history" id="chatHistory">
+      <div class="msg bot">
+        <div class="msg-avatar">⬡</div>
+        <div>
+          <div class="msg-bubble">
+            Hello. I'm <strong>NEXUS</strong> — your AI data analyst.<br/>
+            Upload a dataset and I can answer questions about your data, explain trends, find anomalies, generate forecasts, and provide executive summaries.<br/>
+            <span style="color:var(--t3);font-size:11px;font-family:var(--fm)">// AWAITING DATA UPLOAD</span>
+          </div>
+          <div class="msg-time">NEXUS · Ready</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask anything about your data..."
+        onkeydown="handleChatKey(event)" rows="1" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toasts" id="toastContainer"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// NEXUS ANALYTICS · COMPLETE FRONTEND ENGINE
+// ══════════════════════════════════════════════════════════
+
+const API = 'http://localhost:8000';
+const AP  = API + '/api';   // all /api/... routes
+let currentDatasetId = null;
+let currentSchema = null;
+let charts = {};
+let insightMode = 'detailed';
+let chatContext = [];
+
+// ── NAVIGATION ──────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.getElementById('nav-' + page)?.classList.add('active');
+
+  // Auto-load content on page visit
+  if (page === 'datasets') loadDatasets();
+  else if (page === 'schema' && currentDatasetId) loadSchema();
+  else if (page === 'dashboard' && currentDatasetId) loadDashboard();
+  else if (page === 'timeseries' && currentDatasetId) populateMetricSelects();
+  else if (page === 'breakdown' && currentDatasetId) populateDimSelects();
+  else if (page === 'forecast' && currentDatasetId) populateMetricSelects();
+  else if (page === 'anomalies' && currentDatasetId) populateMetricSelects();
+  else if (page === 'seasonality' && currentDatasetId) populateMetricSelects();
+  else if (page === 'insights' && currentDatasetId) populateMetricSelects();
+}
+
+// ── API CALLS ────────────────────────────────────────────
+async function api(method, path, body) {
+  try {
+    // Support both '/api/...' and raw paths
+    const url = path.startsWith('/api/') ? API + path : AP + path;
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    return await res.json();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function apiUpload(formData) {
+  try {
+    const res = await fetch(AP + '/upload', { method: 'POST', body: formData });
+    return await res.json();
+  } catch(e) { return { error: e.message }; }
+}
+
+// ── HEALTH CHECK ─────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(API + '/health');
+    const d = await r.json();
+    const ok = d.status === 'healthy';
+    document.getElementById('sysDot').style.background = ok ? 'var(--green)' : 'var(--red)';
+    document.getElementById('sysDot').style.boxShadow = ok
+      ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+    document.getElementById('sysText').textContent = ok ? 'ALL SYSTEMS NOMINAL' : 'BACKEND OFFLINE';
+    document.getElementById('beStatus').textContent = ok ? 'ONLINE' : 'OFFLINE';
+    document.getElementById('beStatus').style.color = ok ? 'var(--green)' : 'var(--red)';
+    const svcs = d.services || {};
+    document.getElementById('mlStatus').textContent =
+      svcs.ml_forecasting === 'ready' ? 'READY' : svcs.analyzer === 'ready' ? 'ON' : 'OFF';
+    document.getElementById('aiStatus').textContent =
+      svcs.gemini_ai === 'configured' ? 'GEMINI' : svcs.insights_generator === 'ready' ? 'ACTIVE' : 'FALLBACK';
+    if (ok) toast('System health: All services nominal', 'ok');
+    else toast('Backend offline — start uvicorn on port 8000', 'er');
+  } catch(e) {
+    document.getElementById('sysText').textContent = 'BACKEND OFFLINE';
+    document.getElementById('sysDot').style.background = 'var(--red)';
+    document.getElementById('sysDot').style.boxShadow = '0 0 6px var(--red)';
+    document.getElementById('beStatus').textContent = 'OFFLINE';
+    document.getElementById('beStatus').style.color = 'var(--red)';
+    toast('Cannot reach backend at localhost:8000', 'er');
+  }
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────
+function handleDrag(e, on) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.toggle('drag', on);
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) uploadFile(file);
+}
+
+async function uploadFile(file) {
+  const prog = document.getElementById('uploadProgress');
+  const result = document.getElementById('uploadResult');
+  prog.style.display = 'block';
+  result.style.display = 'none';
+  document.getElementById('uploadFileName').textContent = file.name;
+  document.getElementById('uploadStatus').textContent = 'Reading file...';
+  animateProgress(0, 30, 600);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  document.getElementById('uploadStatus').textContent = 'Uploading to backend...';
+  animateProgress(30, 60, 400);
+
+  const data = await apiUpload(formData);
+
+  if (data.error || !data.success) {
+    toast('Upload failed: ' + (data.error || data.detail || 'Unknown error'), 'er');
+    document.getElementById('uploadStatus').textContent = '✕ Upload failed';
+    animateProgress(60, 0, 300);
+    return;
+  }
+
+  animateProgress(60, 85, 300);
+  document.getElementById('uploadStatus').textContent = 'Detecting schema...';
+
+  currentDatasetId = data.dataset_id;
+  document.getElementById('curDsName').textContent =
+    file.name.length > 12 ? file.name.slice(0, 12) + '…' : file.name;
+
+  // Fetch schema
+  const schemaData = await api('GET', `/api/schema/${currentDatasetId}`);
+  if (!schemaData.error) {
+    currentSchema = schemaData;
+    populateAllSelects();
+  }
+
+  animateProgress(85, 100, 300);
+  document.getElementById('uploadStatus').textContent = '✓ Upload complete';
+
+  // Show result
+  const info = data.data || data;
+  document.getElementById('res-dsid').textContent = currentDatasetId;
+  document.getElementById('res-rows').textContent = fmt(info.rows || 0);
+  const colsEl = document.getElementById('res-cols');
+  colsEl.innerHTML = '';
+  (info.columns || []).forEach(c => {
+    const t = document.createElement('span');
+    t.className = 'tag'; t.textContent = c;
+    colsEl.appendChild(t);
+  });
+
+  setTimeout(() => {
+    result.style.display = 'block';
+    loadDatasets();
+    toast(`✓ ${file.name} uploaded — ${fmt(info.rows||0)} rows detected`, 'ok');
+    document.getElementById('dsCount').textContent =
+      (parseInt(document.getElementById('dsCount').textContent || '0') + 1);
+    // Update chat context
+    chatContext = [];
+    addBotMessage(`Dataset **${file.name}** loaded successfully!\n\n` +
+      `📊 **${fmt(info.rows||0)} rows** across **${(info.columns||[]).length} columns**\n\n` +
+      `Schema auto-detected. I'm ready to answer your questions about this data.`);
+  }, 400);
+}
+
+function animateProgress(from, to, dur) {
+  const el = document.getElementById('uploadProgFill');
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min((Date.now()-start)/dur, 1);
+    el.style.width = (from + (to-from)*p) + '%';
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ── DATASETS ─────────────────────────────────────────────
+async function loadDatasets() {
+  const data = await api('GET', '/api/datasets');
+  const body = document.getElementById('datasetsBody');
+  if (data.error || !data.datasets?.length) {
+    body.innerHTML = `<div class="empty"><div class="empty-ico">◈</div>
+      <div class="empty-title">NO DATASETS</div>
+      <div class="empty-sub">// UPLOAD A FILE TO BEGIN</div></div>`;
+    document.getElementById('dsCount').textContent = '0';
+    return;
+  }
+  document.getElementById('dsCount').textContent = data.datasets.length;
+  body.innerHTML = `<table class="tbl">
+    <thead><tr>
+      <th>DATASET ID</th><th>ROWS</th><th>COLUMNS</th><th>SCHEMA</th><th>ACTIONS</th>
+    </tr></thead>
+    <tbody>${data.datasets.map(ds => `
+      <tr>
+        <td><span class="mono text-cyan">${ds.dataset_id}</span></td>
+        <td><span class="bold text-grn">${fmt(ds.rows)}</span></td>
+        <td>${ds.columns}</td>
+        <td><span class="tag ${ds.has_schema ? 'badge-grn' : ''}">${ds.has_schema ? '✓ DETECTED' : '✕ MISSING'}</span></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-p btn-sm" onclick="selectDataset('${ds.dataset_id}')">SELECT</button>
+          <button class="btn btn-red btn-sm" onclick="deleteDataset('${ds.dataset_id}')">DELETE</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function selectDataset(id) {
+  currentDatasetId = id;
+  const schema = await api('GET', `/api/schema/${id}`);
+  if (!schema.error) { currentSchema = schema; populateAllSelects(); }
+  document.getElementById('curDsName').textContent = id.slice(0, 14);
+  toast('Dataset selected: ' + id, 'inf');
+  navigate('dashboard');
+}
+
+async function deleteDataset(id) {
+  const r = await api('DELETE', `/api/datasets/${id}`);
+  if (r.success) { toast('Dataset deleted', 'ok'); loadDatasets(); }
+  else toast('Delete failed', 'er');
+}
+
+// ── SCHEMA ───────────────────────────────────────────────
+async function loadSchema() {
+  if (!currentDatasetId) { toast('No dataset selected', 'wa'); return; }
+  const s = currentSchema || await api('GET', `/api/schema/${currentDatasetId}`);
+  if (s.error || !s.time_column) {
+    document.getElementById('schemaBody').innerHTML = `<div class="empty">
+      <div class="empty-ico">⬡</div><div class="empty-title">SCHEMA NOT FOUND</div></div>`;
+    return;
+  }
+  currentSchema = s;
+
+  const metrics = s.metrics || [];
+  const dims = s.dimensions || [];
+  const tc = s.time_column;
+
+  document.getElementById('schemaBody').innerHTML = `
+    <div class="grid2 mb16">
+      <div class="card">
+        <div class="ctitle">DATASET INFO</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">ID</span>
+            <span class="mono text-cyan" style="font-size:11px">${s.dataset_id}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">NAME</span>
+            <span style="font-size:12px">${s.dataset_name||'—'}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">ROWS</span>
+            <span class="bold text-grn">${fmt(s.row_count||0)}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">DATE START</span>
+            <span class="mono" style="font-size:11px">${s.date_range_start?.split('T')[0]||'—'}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">DATE END</span>
+            <span class="mono" style="font-size:11px">${s.date_range_end?.split('T')[0]||'—'}</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">TIME COLUMN</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">COLUMN</span>
+            <span class="mono text-cyan">${tc.column_name}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">GRANULARITY</span>
+            <span class="tag">${tc.granularity||'day'}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">FORMAT</span>
+            <span class="mono" style="font-size:11px">${tc.format||'AUTO'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card mb16">
+      <div class="ctitle">METRICS · ${metrics.length} DETECTED</div>
+      <div class="schema-cols">
+        ${metrics.map(m=>`
+          <div class="scol">
+            <div class="scol-type mc">◈ METRIC · ${m.metric_type?.toUpperCase()}</div>
+            <div class="scol-name">${m.name}</div>
+            <div class="scol-info">COL: ${m.source_column}</div>
+            <div class="scol-info">AGG: ${m.aggregation} · UNIT: ${m.unit||'—'}</div>
+            <div class="scol-info" style="margin-top:4px">
+              <span class="tag badge-${m.direction==='positive'?'grn':m.direction==='negative'?'red':'pur'}">${m.direction?.toUpperCase()}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">DIMENSIONS · ${dims.length} DETECTED</div>
+      <div class="schema-cols">
+        ${dims.length ? dims.map(d=>`
+          <div class="scol">
+            <div class="scol-type dc">◫ DIMENSION · ${d.data_type?.toUpperCase()}</div>
+            <div class="scol-name">${d.name}</div>
+            <div class="scol-info">COL: ${d.source_column}</div>
+          </div>`).join('') :
+          '<div class="text-dim mono" style="font-size:11px;padding:8px">No dimensions detected</div>'}
+      </div>
+    </div>`;
+}
+
+// ── DASHBOARD ────────────────────────────────────────────
+async function loadDashboard() {
+  if (!currentDatasetId) { toast('Select a dataset first', 'wa'); return; }
+  document.getElementById('dashboardBody').innerHTML = `<div style="text-align:center;padding:40px">
+    <div class="ldots"><span></span><span></span><span></span></div>
+    <div class="text-dim mono mt12" style="font-size:11px">LOADING DASHBOARD...</div></div>`;
+
+  // Fetch schema first if not loaded
+  if (!currentSchema) {
+    currentSchema = await api('GET', `/api/schema/${currentDatasetId}`);
+    if (currentSchema && !currentSchema.error) populateAllSelects();
+  }
+
+  const metricNames = currentSchema?.metrics?.slice(0,3).map(m=>m.name) || [];
+
+  // Run KPI analysis
+  const kpiData = await api('POST', '/api/analyze/kpi', {
+    dataset_id: currentDatasetId,
+    comparison_period: 'previous_period',
+    metric_names: metricNames.length ? metricNames : null
+  });
+
+  // Also try the quick dashboard/kpis endpoint as fallback
+  let dashKpis = null;
+  if (!kpiData.kpis?.length) {
+    dashKpis = await api('GET', '/api/dashboard/kpis');
+  }
+
+  // Run time series
+  let tsData = null;
+  if (metricNames.length) {
+    tsData = await api('POST', '/api/analyze/time-series', {
+      dataset_id: currentDatasetId,
+      metric_names: metricNames,
+      granularity: 'week'
+    });
+  }
+
+  // Run breakdown if dimensions exist
+  let bdData = null;
+  if (currentSchema?.dimensions?.length) {
+    bdData = await api('POST', '/api/analyze/breakdown', {
+      dataset_id: currentDatasetId,
+      dimension_name: currentSchema.dimensions[0]?.name,
+      top_n: 8
+    });
+  }
+
+  // Generate executive insights
+  const insightPayload = kpiData.kpis?.length ? kpiData :
+    { analysis_type: 'kpi', kpis: [], dataset_id: currentDatasetId };
+  const kpiInsights = await api('POST', '/api/insights', {
+    analysis_result: insightPayload,
+    insight_type: 'executive'
+  });
+
+  renderDashboard(kpiData, tsData, bdData, kpiInsights, dashKpis);
+}
+
+function renderDashboard(kpiData, tsData, bdData, insightsData, dashKpis) {
+  let kpis = kpiData?.kpis || [];
+
+  // Fallback: build KPI cards from /api/dashboard/kpis if analyzer returned nothing
+  if (!kpis.length && dashKpis && !dashKpis.error) {
+    const dk = dashKpis;
+    const fields = [
+      {metric:'total_revenue', chg:'revenue_change', unit:'$', dir:'positive'},
+      {metric:'net_profit',    chg:'profit_change',  unit:'$', dir:'positive'},
+      {metric:'total_expenses',chg:'expense_change', unit:'$', dir:'negative'},
+      {metric:'active_clients',chg:'client_change',  unit:'',  dir:'positive'}
+    ];
+    kpis = fields.filter(f=>dk[f.metric]!=null).map(f=>({
+      metric: f.metric.replace(/_/g,' '),
+      current_value: dk[f.metric],
+      change_percent: dk[f.chg],
+      direction: f.dir,
+      unit: f.unit
+    }));
+  }
+  const palette = ['', 'g', 'r', 'o', 'v'];
+  const icons = ['💰','📈','📊','👥','⚡','🎯','💎','🔮'];
+
+  const kpiHtml = kpis.map((k, i) => {
+    const chg = k.change_percent;
+    const chgClass = !chg ? 'fl' : chg > 0 ? (k.direction==='negative'?'dn':'up') : (k.direction==='negative'?'up':'dn');
+    const chgSign = chg > 0 ? '▲' : chg < 0 ? '▼' : '—';
+    return `<div class="kpi ${palette[i%5]}">
+      <div class="kpi-ico">${icons[i%icons.length]}</div>
+      <div class="kpi-lbl">${k.metric?.toUpperCase()}</div>
+      <div class="kpi-val">${k.unit||''}${fmtVal(k.current_value)}</div>
+      ${chg != null ? `<div class="kpi-chg ${chgClass}">${chgSign} ${Math.abs(chg).toFixed(1)}% vs prev</div>` : ''}
+    </div>`;
+  }).join('');
+
+  let tsChartHtml = '';
+  let bdChartHtml = '';
+
+  if (tsData?.data?.length) {
+    tsChartHtml = `<div class="cwrap" style="grid-column:1/-1">
+      <div class="chart-hd">
+        <div class="chart-title">◈ TIME SERIES OVERVIEW</div>
+        <div class="ctabs">
+          <div class="ctab on" onclick="switchGran(this,'week')">WEEK</div>
+          <div class="ctab" onclick="switchGran(this,'month')">MONTH</div>
+        </div>
+      </div>
+      <canvas id="dashTsChart" height="80"></canvas>
+    </div>`;
+  }
+
+  if (bdData?.data?.length) {
+    bdChartHtml = `<div class="cwrap">
+      <div class="chart-hd"><div class="chart-title">◫ TOP ${bdData.data.length} · ${bdData.dimension?.toUpperCase()}</div></div>
+      <canvas id="dashBdChart" height="200"></canvas>
+    </div>`;
+  }
+
+  const insHtml = (insightsData?.insights || []).map((ins,i) => {
+    const cols = ['var(--cyan)','var(--green)','var(--orange)','var(--purple)','var(--yellow)'];
+    return `<div class="ins-item">
+      <div class="ins-dot" style="background:${cols[i%5]};color:${cols[i%5]}"></div>
+      <div class="ins-txt">${ins}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dashboardBody').innerHTML = `
+    <div class="kpi-grid">${kpiHtml || '<div class="text-dim mono">No KPI data available</div>'}</div>
+    <div style="display:grid;grid-template-columns:${bdData?.data?.length?'2fr 1fr':'1fr'};gap:14px;margin-bottom:22px">
+      ${tsChartHtml}${bdChartHtml}
+    </div>
+    <div class="card">
+      <div class="ctitle">✦ AI EXECUTIVE INSIGHTS</div>
+      <div class="ins-list">${insHtml || '<div class="text-dim mono" style="font-size:11px">AI insights unavailable</div>'}</div>
+    </div>`;
+
+  // Draw charts
+  setTimeout(() => {
+    if (tsData?.data?.length) drawDashTimeSeries(tsData);
+    if (bdData?.data?.length) drawDashBreakdown(bdData);
+  }, 100);
+}
+
+function drawDashTimeSeries(tsData) {
+  const ctx = document.getElementById('dashTsChart');
+  if (!ctx) return;
+  if (charts.dashTs) charts.dashTs.destroy();
+  const labels = tsData.data.map(d => d[tsData.time_column]?.split('T')[0] || d[tsData.time_column]);
+  const metrics = Object.keys(tsData.data[0]).filter(k => k !== tsData.time_column);
+  const colors = ['#00c8ff','#00ff88','#ff8c00','#c084fc'];
+  charts.dashTs = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: metrics.map((m,i) => ({
+        label: m,
+        data: tsData.data.map(d => d[m]),
+        borderColor: colors[i%colors.length],
+        backgroundColor: colors[i%colors.length] + '15',
+        borderWidth: 2,
+        fill: i===0,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      }))
+    },
+    options: chartOpts('line')
+  });
+}
+
+function drawDashBreakdown(bdData) {
+  const ctx = document.getElementById('dashBdChart');
+  if (!ctx) return;
+  if (charts.dashBd) charts.dashBd.destroy();
+  const metric = bdData.metrics?.[0] || Object.keys(bdData.data[0]).find(k=>k!==bdData.dimension);
+  const labels = bdData.data.map(d => d[bdData.dimension]);
+  const vals = bdData.data.map(d => d[metric]);
+  charts.dashBd = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: metric, data: vals,
+        backgroundColor: vals.map((_,i)=>['#00c8ff','#00ff88','#ff8c00','#c084fc','#ffd700'][i%5]+'cc'),
+        borderRadius: 4, borderSkipped: false }]
+    },
+    options: chartOpts('bar')
+  });
+}
+
+async function switchGran(tab, gran) {
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+  tab.classList.add('on');
+  if (!currentDatasetId || !currentSchema) return;
+  const metricNames = currentSchema.metrics?.slice(0,3).map(m=>m.name)||[];
+  const tsData = await api('POST','/api/analyze/time-series',{
+    dataset_id: currentDatasetId, metric_names: metricNames, granularity: gran
+  });
+  if (tsData.data) drawDashTimeSeries(tsData);
+}
+
+// ── TIME SERIES ───────────────────────────────────────────
+async function runTimeSeries() {
+  if (!currentDatasetId) { toast('No dataset selected','wa'); return; }
+  const gran = document.getElementById('ts-gran').value;
+  const start = document.getElementById('ts-start').value;
+  const end = document.getElementById('ts-end').value;
+  const metSel = document.getElementById('ts-metrics');
+  const metrics = Array.from(metSel.selectedOptions).map(o=>o.value).filter(v=>v!=='Loading...');
+
+  setLoading('tsBody');
+  const data = await api('POST','/api/analyze/time-series',{
+    dataset_id: currentDatasetId,
+    metric_names: metrics.length ? metrics : null,
+    granularity: gran,
+    start_date: start || null,
+    end_date: end || null
+  });
+  if (data.error) { toast('Time series failed: '+data.error,'er'); renderEmpty('tsBody','Error loading data'); return; }
+  renderTimeSeries(data);
+}
+
+function renderTimeSeries(data) {
+  const summary = data.summary || {};
+  const metrics = Object.keys(summary);
+  const statsHtml = metrics.map(m=>{
+    const s = summary[m];
+    const tc = s.trend==='up'?'text-grn':s.trend==='down'?'text-red':'text-dim';
+    return `<div class="card">
+      <div class="ctitle">${m.toUpperCase()}</div>
+      <div class="grid2" style="gap:8px">
+        ${s.total!=null?`<div><div class="text-dim mono" style="font-size:8px">TOTAL</div><div class="bold" style="font-size:16px;font-family:var(--fh)">${s.unit||''}${fmtVal(s.total)}</div></div>`:''}
+        <div><div class="text-dim mono" style="font-size:8px">AVG</div><div class="bold" style="font-size:16px;font-family:var(--fh)">${s.unit||''}${fmtVal(s.avg)}</div></div>
+        <div><div class="text-dim mono" style="font-size:8px">MAX</div><div class="bold text-grn">${s.unit||''}${fmtVal(s.max)}</div></div>
+        <div><div class="text-dim mono" style="font-size:8px">MIN</div><div class="bold text-red">${s.unit||''}${fmtVal(s.min)}</div></div>
+      </div>
+      <div class="mt12 flex-b">
+        <span class="text-dim mono" style="font-size:9px">TREND</span>
+        <span class="${tc} bold mono" style="font-size:12px">${s.trend?.toUpperCase()}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('tsBody').innerHTML = `
+    <div class="grid3 mb16">${statsHtml}</div>
+    <div class="cwrap">
+      <div class="chart-hd"><div class="chart-title">◈ TIME SERIES · ${data.granularity?.toUpperCase()}</div>
+        <span class="mono text-dim" style="font-size:9px">${data.date_range?.start?.split('T')[0]||''} → ${data.date_range?.end?.split('T')[0]||''}</span>
+      </div>
+      <canvas id="tsChart" height="90"></canvas>
+    </div>`;
+
+  setTimeout(() => {
+    const ctx = document.getElementById('tsChart');
+    if (!ctx || !data.data?.length) return;
+    if (charts.ts) charts.ts.destroy();
+    const labels = data.data.map(d=>d[data.time_column]?.split('T')[0]||d[data.time_column]);
+    const colors = ['#00c8ff','#00ff88','#ff8c00','#c084fc'];
+    charts.ts = new Chart(ctx, {
+      type:'line',
+      data:{labels,datasets:metrics.map((m,i)=>({
+        label:m, data:data.data.map(d=>d[m]),
+        borderColor:colors[i%4], backgroundColor:colors[i%4]+'18',
+        borderWidth:2, fill:i===0, tension:0.4, pointRadius:0, pointHoverRadius:4
+      }))},
+      options: chartOpts('line')
+    });
+  }, 80);
+}
+
+// ── BREAKDOWN ─────────────────────────────────────────────
+async function runBreakdown() {
+  if (!currentDatasetId) { toast('No dataset selected','wa'); return; }
+  const dim = document.getElementById('bd-dim').value;
+  const topN = parseInt(document.getElementById('bd-topn').value);
+  setLoading('bdBody');
+  const data = await api('POST','/api/analyze/breakdown',{
+    dataset_id: currentDatasetId, dimension_name: dim, top_n: topN
+  });
+  if (data.error) { toast('Breakdown failed','er'); return; }
+  renderBreakdown(data);
+}
+
+function renderBreakdown(data) {
+  const metric = data.metrics?.[0];
+  const dim = data.dimension;
+  const rows = data.data || [];
+  const max = Math.max(...rows.map(r=>r[metric]||0));
+
+  const tableRows = rows.map((r,i)=>{
+    const pct = max > 0 ? (r[metric]/max)*100 : 0;
+    const colors = ['#00c8ff','#00ff88','#ff8c00','#c084fc','#ffd700'];
+    return `<tr>
+      <td><span class="mono" style="color:var(--t3);font-size:9px">#${i+1}</span></td>
+      <td class="bold">${r[dim]}</td>
+      <td><div class="flex" style="gap:10px">
+        <div style="flex:1;height:6px;background:var(--b1);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${colors[i%5]};border-radius:3px;transition:width 1s ease"></div>
+        </div>
+        <span class="mono bold" style="min-width:80px;text-align:right;color:${colors[i%5]}">${fmtVal(r[metric])}</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bdBody').innerHTML = `
+    <div class="cg2" style="display:grid;grid-template-columns:2fr 1fr;gap:14px">
+      <div class="cwrap">
+        <div class="chart-hd"><div class="chart-title">◫ ${dim?.toUpperCase()} BREAKDOWN</div></div>
+        <canvas id="bdChart" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="ctitle">SUMMARY</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">TOTAL VALUES</span>
+            <span class="bold text-cyan">${data.summary?.total_dimension_values}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">SHOWING</span>
+            <span class="bold">TOP ${data.summary?.showing_top_n}</span></div>
+          ${data.summary?.metrics?.[metric] ? `
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">TOTAL</span>
+            <span class="bold text-grn">${fmtVal(data.summary.metrics[metric].total)}</span></div>
+          <div class="flex-b"><span class="text-dim mono" style="font-size:9px">TOP CONTRIBUTOR</span>
+            <span class="bold">${data.summary.metrics[metric].top_contributor||'—'}</span></div>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="card mt16">
+      <div class="ctitle">DETAILED RANKINGS</div>
+      <table class="tbl">
+        <thead><tr><th>#</th><th>${dim?.toUpperCase()}</th><th>${metric?.toUpperCase()} DISTRIBUTION</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`;
+
+  setTimeout(() => {
+    const ctx = document.getElementById('bdChart');
+    if (!ctx) return;
+    if (charts.bd) charts.bd.destroy();
+    const colors = rows.map((_,i)=>['#00c8ff','#00ff88','#ff8c00','#c084fc','#ffd700'][i%5]+'cc');
+    charts.bd = new Chart(ctx, {
+      type:'bar',
+      data:{labels:rows.map(r=>r[dim]),datasets:[{label:metric,data:rows.map(r=>r[metric]),
+        backgroundColor:colors,borderRadius:4,borderSkipped:false}]},
+      options:chartOpts('bar')
+    });
+  }, 80);
+}
+
+// ── FORECAST ─────────────────────────────────────────────
+async function runForecast() {
+  if (!currentDatasetId) { toast('No dataset','wa'); return; }
+  const metric = document.getElementById('fc-metric').value;
+  const periods = parseInt(document.getElementById('fc-periods').value);
+  const conf = parseFloat(document.getElementById('fc-conf').value);
+  setLoading('fcBody');
+  const data = await api('POST','/api/analyze/forecast',{
+    dataset_id: currentDatasetId,
+    metric_name: metric,
+    periods_ahead: periods,
+    confidence_interval: conf,
+    include_historical: true
+  });
+  if (data.error) { toast('Forecast failed: '+data.error,'er'); return; }
+  renderForecast(data);
+}
+
+function renderForecast(data) {
+  const forecast = data.forecast || [];
+  const hist = data.historical_data || [];
+  const acc = data.accuracy_metrics || {};
+  const method = data.method === 'ml_prophet' ? '🤖 PROPHET ML' : '📐 LINEAR TREND';
+  const last = forecast[forecast.length-1];
+  const first = forecast[0];
+
+  const change = first && last ? ((last.predicted_value - first.predicted_value)/first.predicted_value*100).toFixed(1) : null;
+
+  document.getElementById('fcBody').innerHTML = `
+    <div class="grid3 mb16">
+      <div class="card"><div class="ctitle">METHOD</div>
+        <div class="bold mono" style="font-size:13px">${method}</div></div>
+      <div class="card"><div class="ctitle">FORECAST END VALUE</div>
+        <div class="bold text-cyan" style="font-size:20px;font-family:var(--fh)">${fmtVal(last?.predicted_value)}</div></div>
+      <div class="card"><div class="ctitle">TREND OVER PERIOD</div>
+        <div class="bold ${parseFloat(change)>0?'text-grn':'text-red'}" style="font-size:20px;font-family:var(--fh)">${change!=null?(change>0?'▲':'▼')+Math.abs(change)+'%':'—'}</div></div>
+    </div>
+    ${acc.mape!=null?`
+    <div class="grid3 mb16">
+      <div class="card"><div class="ctitle">MAPE</div><div class="bold" style="font-size:18px;font-family:var(--fh)">${acc.mape?.toFixed(2)}%</div></div>
+      <div class="card"><div class="ctitle">RMSE</div><div class="bold" style="font-size:18px;font-family:var(--fh)">${fmtVal(acc.rmse)}</div></div>
+      <div class="card"><div class="ctitle">MAE</div><div class="bold" style="font-size:18px;font-family:var(--fh)">${fmtVal(acc.mae)}</div></div>
+    </div>`:''}
+    <div class="cwrap mb16">
+      <div class="chart-hd"><div class="chart-title">◈ FORECAST · ${data.metric?.toUpperCase()}</div>
+        <span class="tag">${data.forecast_horizon} PERIODS</span>
+      </div>
+      <canvas id="fcChart" height="90"></canvas>
+    </div>
+    ${data.warnings?.length?`<div class="card">
+      <div class="ctitle">⚠ WARNINGS</div>
+      ${data.warnings.map(w=>`<div class="text-dim mono mb12" style="font-size:10px">${w}</div>`).join('')}
+    </div>`:''}`;
+
+  setTimeout(() => {
+    const ctx = document.getElementById('fcChart');
+    if (!ctx) return;
+    if (charts.fc) charts.fc.destroy();
+    const histLabels = hist.map(d=>d.date);
+    const histVals = hist.map(d=>d.actual_value);
+    const fcLabels = forecast.map(d=>d.date);
+    const fcVals = forecast.map(d=>d.predicted_value);
+    const fcLow = forecast.map(d=>d.lower_bound);
+    const fcHigh = forecast.map(d=>d.upper_bound);
+    const allLabels = [...histLabels, ...fcLabels];
+
+    charts.fc = new Chart(ctx, {
+      type:'line',
+      data:{labels:allLabels,datasets:[
+        {label:'Actual',data:[...histVals,...fcVals.map(()=>null)],
+          borderColor:'#00c8ff',borderWidth:2,fill:false,tension:0.4,pointRadius:0},
+        {label:'Forecast',data:[...histVals.map(()=>null),...fcVals],
+          borderColor:'#00ff88',borderWidth:2,borderDash:[6,3],fill:false,tension:0.4,pointRadius:0},
+        {label:'Upper',data:[...histVals.map(()=>null),...fcHigh],
+          borderColor:'rgba(0,255,136,.2)',borderWidth:1,fill:'+1',tension:0.4,pointRadius:0},
+        {label:'Lower',data:[...histVals.map(()=>null),...fcLow],
+          borderColor:'rgba(0,255,136,.2)',borderWidth:1,fill:false,tension:0.4,pointRadius:0}
+      ]},
+      options:chartOpts('line')
+    });
+  }, 80);
+}
+
+// ── ANOMALIES ─────────────────────────────────────────────
+async function runAnomalies() {
+  if (!currentDatasetId) { toast('No dataset','wa'); return; }
+  const metric = document.getElementById('an-metric').value;
+  const sens = parseFloat(document.getElementById('an-sens').value);
+  const score = parseFloat(document.getElementById('an-score').value);
+  setLoading('anBody');
+  const data = await api('POST','/api/analyze/anomalies',{
+    dataset_id: currentDatasetId,
+    metric_name: metric,
+    sensitivity: sens,
+    min_anomaly_score: score
+  });
+  if (data.error) { toast('Anomaly scan failed','er'); return; }
+  renderAnomalies(data);
+}
+
+function renderAnomalies(data) {
+  const anomalies = data.anomalies || [];
+  const rate = data.anomaly_rate || 0;
+  const bs = data.baseline_statistics || {};
+
+  const sevCls = s => ({'critical':'sev-c','high':'sev-h','medium':'sev-m','low':'sev-l'})[s]||'sev-l';
+
+  document.getElementById('anBody').innerHTML = `
+    <div class="grid3 mb16">
+      <div class="kpi ${anomalies.length>0?'r':'g'}">
+        <div class="kpi-lbl">ANOMALIES FOUND</div>
+        <div class="kpi-val">${anomalies.length}</div>
+        <div class="kpi-chg ${rate>5?'dn':'up'}">${rate.toFixed(1)}% rate</div>
+      </div>
+      <div class="card"><div class="ctitle">BASELINE MEAN</div>
+        <div class="bold" style="font-size:20px;font-family:var(--fh)">${fmtVal(bs.mean)}</div></div>
+      <div class="card"><div class="ctitle">EXPECTED RANGE</div>
+        <div class="bold mono" style="font-size:13px">${fmtVal(bs.expected_range?.[0])} → ${fmtVal(bs.expected_range?.[1])}</div></div>
+    </div>
+    ${anomalies.length ? `
+    <div class="cwrap mb16">
+      <div class="chart-hd"><div class="chart-title">⚠ ANOMALY TIMELINE · ${data.metric?.toUpperCase()}</div></div>
+      <canvas id="anChart" height="80"></canvas>
+    </div>
+    <div class="card">
+      <div class="ctitle">ANOMALY DETAILS · ${anomalies.length} EVENTS</div>
+      <table class="tbl">
+        <thead><tr><th>DATE</th><th>VALUE</th><th>EXPECTED</th><th>DEVIATION</th><th>DIRECTION</th><th>SEVERITY</th><th>SCORE</th></tr></thead>
+        <tbody>
+          ${anomalies.map(a=>`<tr>
+            <td class="mono" style="font-size:11px">${a.date}</td>
+            <td class="bold">${fmtVal(a.actual_value)}</td>
+            <td class="text-dim">${fmtVal(a.expected_value)}</td>
+            <td class="${a.deviation_percent>0?'text-red':'text-grn'}">
+              ${a.direction==='above'?'▲':'▼'} ${Math.abs(a.deviation_percent).toFixed(1)}%
+            </td>
+            <td><span class="tag ${a.direction==='above'?'badge-red':'badge-grn'}">${a.direction?.toUpperCase()}</span></td>
+            <td><span class="sev ${sevCls(a.severity)}">${a.severity?.toUpperCase()}</span></td>
+            <td class="mono">${(a.anomaly_score*100).toFixed(0)}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : `<div class="card">
+      <div class="empty"><div class="empty-ico">✓</div>
+        <div class="empty-title">NO ANOMALIES DETECTED</div>
+        <div class="empty-sub">// DATA IS WITHIN EXPECTED BOUNDS · TRY LOWER SENSITIVITY</div>
+      </div>
+    </div>`}`;
+
+  if (anomalies.length) {
+    setTimeout(() => {
+      const ctx = document.getElementById('anChart');
+      if (!ctx) return;
+      if (charts.an) charts.an.destroy();
+      const critPts = anomalies.map(a=>({x:a.date,y:a.actual_value,sev:a.severity}));
+      charts.an = new Chart(ctx, {
+        type:'scatter',
+        data:{datasets:[
+          {label:'Anomaly',data:critPts.map(p=>({x:p.x,y:p.y})),
+            backgroundColor:critPts.map(p=>p.sev==='critical'?'#ff1a44':p.sev==='high'?'#ff8c00':'#ffd700'),
+            pointRadius:8,pointHoverRadius:12}
+        ]},
+        options:{...chartOpts('scatter'),plugins:{...chartOpts('scatter').plugins,
+          tooltip:{callbacks:{label:c=>`${c.raw.x}: ${fmtVal(c.raw.y)}`}}}}
+      });
+    }, 80);
+  }
+}
+
+// ── SEASONALITY ───────────────────────────────────────────
+async function runSeasonality() {
+  if (!currentDatasetId) { toast('No dataset','wa'); return; }
+  const metric = document.getElementById('se-metric').value;
+  setLoading('seBody');
+  const data = await api('POST','/api/analyze/seasonality',{
+    dataset_id: currentDatasetId,
+    metric_names: [metric]
+  });
+  if (data.error) { toast('Seasonality failed','er'); return; }
+  renderSeasonality(data);
+}
+
+function renderSeasonality(data) {
+  const dow = data.patterns?.day_of_week || [];
+  const mon = data.patterns?.month || [];
+  const insights = data.insights || [];
+
+  const heatCell = (val, avg) => {
+    const pct = avg > 0 ? val/avg : 1;
+    const intensity = Math.max(0,Math.min(1,(pct-0.5)*2));
+    const r = pct < 1 ? Math.round(40+intensity*180) : 40;
+    const g = pct >= 1 ? Math.round(80+intensity*180) : 40;
+    const b = 80;
+    return `rgba(${r},${g},${b},0.7)`;
+  };
+
+  const dowHtml = dow.map(d => {
+    const col = heatCell(d.avg_value, data.overall_average);
+    const sign = d.vs_overall_percent > 0 ? '+' : '';
+    return `<div class="hm-row">
+      <div class="hm-lbl">${d.day.slice(0,3).toUpperCase()}</div>
+      <div class="hm-cell" style="background:${col};border:1px solid rgba(255,255,255,.05)" title="${d.day}: ${fmtVal(d.avg_value)}">
+        <span style="color:#fff;text-shadow:0 0 4px #000">${sign}${d.vs_overall_percent.toFixed(0)}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const monHtml = mon.map(m => {
+    const col = heatCell(m.avg_value, data.overall_average);
+    const sign = m.vs_overall_percent > 0 ? '+' : '';
+    return `<div class="hm-row">
+      <div class="hm-lbl">${m.month.slice(0,3).toUpperCase()}</div>
+      <div class="hm-cell" style="background:${col};border:1px solid rgba(255,255,255,.05)" title="${m.month}: ${fmtVal(m.avg_value)}">
+        <span style="color:#fff;text-shadow:0 0 4px #000">${sign}${m.vs_overall_percent.toFixed(0)}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('seBody').innerHTML = `
+    <div class="grid2 mb16">
+      <div class="cwrap">
+        <div class="chart-hd"><div class="chart-title">◌ DAY-OF-WEEK PATTERN</div></div>
+        <canvas id="dowChart" height="140"></canvas>
+      </div>
+      <div class="cwrap">
+        <div class="chart-hd"><div class="chart-title">◌ MONTHLY PATTERN</div></div>
+        <canvas id="monChart" height="140"></canvas>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="ctitle">HEATMAP · DAY OF WEEK</div>
+        <div class="heatmap-grid">${dowHtml}</div>
+      </div>
+      <div class="card">
+        <div class="ctitle">HEATMAP · MONTH</div>
+        <div class="heatmap-grid">${monHtml}</div>
+      </div>
+    </div>
+    ${insights.length ? `
+    <div class="card mt16">
+      <div class="ctitle">◌ PATTERN INSIGHTS</div>
+      <div class="ins-list">${insights.map(i=>`<div class="ins-item">
+        <div class="ins-dot" style="background:var(--purple);color:var(--purple)"></div>
+        <div class="ins-txt">${i}</div>
+      </div>`).join('')}</div>
+    </div>` : ''}`;
+
+  setTimeout(() => {
+    // Day of week chart
+    const dowCtx = document.getElementById('dowChart');
+    if (dowCtx && dow.length) {
+      if (charts.dow) charts.dow.destroy();
+      charts.dow = new Chart(dowCtx, {
+        type:'bar',
+        data:{labels:dow.map(d=>d.day.slice(0,3)),
+          datasets:[{label:data.metric,data:dow.map(d=>d.avg_value),
+            backgroundColor:dow.map(d=>d.vs_overall_percent>0?'rgba(0,255,136,.7)':'rgba(255,51,102,.7)'),
+            borderRadius:4}]},
+        options:chartOpts('bar')
+      });
+    }
+    // Monthly chart
+    const monCtx = document.getElementById('monChart');
+    if (monCtx && mon.length) {
+      if (charts.mon) charts.mon.destroy();
+      charts.mon = new Chart(monCtx, {
+        type:'bar',
+        data:{labels:mon.map(m=>m.month.slice(0,3)),
+          datasets:[{label:data.metric,data:mon.map(m=>m.avg_value),
+            backgroundColor:mon.map(m=>m.vs_overall_percent>0?'rgba(0,200,255,.7)':'rgba(255,140,0,.7)'),
+            borderRadius:4}]},
+        options:chartOpts('bar')
+      });
+    }
+  }, 80);
+}
+
+// ── INSIGHTS ─────────────────────────────────────────────
+function toggleInsightType() {
+  insightMode = insightMode === 'detailed' ? 'executive' : 'detailed';
+  document.getElementById('insightTypeBtn').textContent = 'MODE: ' + insightMode.toUpperCase();
+}
+
+async function generateInsights() {
+  if (!currentDatasetId) { toast('No dataset','wa'); return; }
+  const analysisType = document.getElementById('ins-type').value;
+  const metric = document.getElementById('ins-metric').value;
+  setLoading('insBody');
+
+  // First run analysis to get result
+  const params = {
+    dataset_id: currentDatasetId,
+    metric_names: [metric],
+    metric_name: metric
+  };
+  if (analysisType === 'dimension_breakdown' && currentSchema?.dimensions?.[0]) {
+    params.dimension_name = currentSchema.dimensions[0].name;
+  }
+
+  let endpoint = '/api/analyze/';
+  const epMap = {
+    kpi:'/api/analyze/kpi', time_series:'/api/analyze/time-series',
+    dimension_breakdown:'/api/analyze/breakdown',
+    forecast:'/api/analyze/forecast', anomaly_detection:'/api/analyze/anomalies',
+    seasonality:'/api/analyze/seasonality'
+  };
+  const analysisResult = await api('POST', epMap[analysisType]||'/api/analyze/kpi', params);
+
+  const insData = await api('POST','/api/insights',{
+    analysis_result: analysisResult,
+    insight_type: insightMode
+  });
+
+  if (insData.error || !insData.insights) {
+    toast('Insights generation failed','er');
+    renderEmpty('insBody','Insights unavailable');
+    return;
+  }
+
+  const cols = ['var(--cyan)','var(--green)','var(--orange)','var(--purple)','var(--yellow)'];
+  const aiPowered = insData.metadata?.ai_powered;
+
+  document.getElementById('insBody').innerHTML = `
+    <div class="card mb16">
+      <div class="flex-b mb16">
+        <div class="ctitle" style="margin:0">✦ ${analysisType.replace(/_/g,' ').toUpperCase()} INSIGHTS</div>
+        <div class="flex" style="gap:8px">
+          <span class="tag ${aiPowered?'badge-grn':''}">${aiPowered?'🤖 GEMINI AI':'FALLBACK'}</span>
+          <span class="tag badge-pur">${insightMode.toUpperCase()}</span>
+          <span class="text-dim mono" style="font-size:9px">${new Date(insData.generated_at||Date.now()).toLocaleTimeString()}</span>
+        </div>
+      </div>
+      <div class="ins-list">
+        ${insData.insights.map((ins,i)=>`
+          <div class="ins-item" style="animation:fadein .3s ease ${i*0.1}s both">
+            <div class="ins-dot" style="background:${cols[i%5]};color:${cols[i%5]}"></div>
+            <div class="ins-txt">${ins}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="flex" style="gap:8px;flex-wrap:wrap">
+      <button class="btn btn-g btn-sm" onclick="generateInsights()">↺ REGENERATE</button>
+      <button class="btn btn-p btn-sm" onclick="copyInsights()">⎘ COPY</button>
+      <button class="btn btn-grn btn-sm" onclick="navigate('chat')">◎ DISCUSS IN CHAT</button>
+    </div>`;
+
+  toast('✦ Insights generated successfully','ok');
+}
+
+function copyInsights() {
+  const items = document.querySelectorAll('.ins-txt');
+  const text = Array.from(items).map(el=>el.textContent).join('\n\n');
+  navigator.clipboard.writeText(text).then(()=>toast('Insights copied','inf'));
+}
+
+// ── CHAT ──────────────────────────────────────────────────
+function sendSuggestion(el) {
+  document.getElementById('chatInput').value = el.textContent;
+  sendChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addUserMessage(msg);
+  chatContext.push({ role: 'user', content: msg });
+
+  // Show typing
+  const typingId = addTyping();
+
+  try {
+    const response = await generateChatResponse(msg);
+    removeTyping(typingId);
+    addBotMessage(response);
+    chatContext.push({ role: 'assistant', content: response });
+    if (chatContext.length > 20) chatContext = chatContext.slice(-20);
+  } catch(e) {
+    removeTyping(typingId);
+    addBotMessage('⚠ Error processing request. Check backend connection.');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+async function generateChatResponse(userMsg) {
+  if (!currentDatasetId) {
+    return `I don't have any data loaded yet. Please **upload a CSV, Excel, or JSON file** first using the Upload page, then come back to chat about it!\n\nI can help you with:\n• KPI analysis & trends\n• Forecasting future values\n• Finding anomalies\n• Seasonal patterns\n• Executive summaries`;
+  }
+
+  const lower = userMsg.toLowerCase();
+
+  // Route to appropriate analysis based on intent
+  if (lower.includes('kpi') || lower.includes('summary') || lower.includes('overview') || lower.includes('executive') || lower.includes('performance')) {
+    return await chatKPI(userMsg);
+  } else if (lower.includes('trend') || lower.includes('time') || lower.includes('over time') || lower.includes('history') || lower.includes('historical')) {
+    return await chatTimeSeries(userMsg);
+  } else if (lower.includes('forecast') || lower.includes('predict') || lower.includes('future') || lower.includes('next')) {
+    return await chatForecast(userMsg);
+  } else if (lower.includes('anomal') || lower.includes('unusual') || lower.includes('outlier') || lower.includes('spike') || lower.includes('drop')) {
+    return await chatAnomalies(userMsg);
+  } else if (lower.includes('season') || lower.includes('day') || lower.includes('week') || lower.includes('month') || lower.includes('pattern')) {
+    return await chatSeasonality(userMsg);
+  } else if (lower.includes('breakdown') || lower.includes('segment') || lower.includes('by ') || lower.includes('top') || lower.includes('best') || lower.includes('worst')) {
+    return await chatBreakdown(userMsg);
+  } else if (lower.includes('insight') || lower.includes('recommend') || lower.includes('suggest') || lower.includes('advice')) {
+    return await chatInsights(userMsg);
+  } else if (lower.includes('schema') || lower.includes('column') || lower.includes('metric') || lower.includes('data structure') || lower.includes('field')) {
+    return await chatSchema();
+  } else if (lower.includes('quality') || lower.includes('missing') || lower.includes('clean')) {
+    return await chatQuality();
+  } else {
+    // Default: try KPI + general info
+    return await chatGeneral(userMsg);
+  }
+}
+
+async function chatKPI(msg) {
+  const data = await api('POST','/api/analyze/kpi',{
+    dataset_id: currentDatasetId,
+    comparison_period: 'previous_period'
+  });
+  if (data.error) return `⚠ Could not fetch KPI data: ${data.error}`;
+  const insData = await api('POST','/api/insights',{
+    analysis_result: data, insight_type: 'executive'
+  });
+  const kpis = data.kpis || [];
+  let reply = `**📊 KPI OVERVIEW** _(as of ${data.as_of_date?.split('T')[0]})_\n\n`;
+  kpis.forEach(k => {
+    const chg = k.change_percent;
+    const arrow = !chg ? '→' : chg > 0 ? '▲' : '▼';
+    const good = (chg > 0 && k.direction==='positive') || (chg < 0 && k.direction==='negative');
+    reply += `**${k.metric?.toUpperCase()}**: ${k.unit||''}${fmtVal(k.current_value)}`;
+    if (chg != null) reply += ` ${arrow} ${Math.abs(chg).toFixed(1)}% ${good?'✓':'⚠'}`;
+    reply += '\n';
+  });
+  if (insData.insights?.length) {
+    reply += '\n**AI Insights:**\n';
+    insData.insights.forEach(i => reply += `• ${i}\n`);
+  }
+  return reply;
+}
+
+async function chatTimeSeries(msg) {
+  const metrics = currentSchema?.metrics?.slice(0,2).map(m=>m.name) || [];
+  const data = await api('POST','/api/analyze/time-series',{
+    dataset_id: currentDatasetId,
+    metric_names: metrics,
+    granularity: 'month'
+  });
+  if (data.error) return `⚠ Could not fetch time series: ${data.error}`;
+  let reply = `**📈 TIME SERIES ANALYSIS**\n\n`;
+  reply += `Date range: **${data.date_range?.start?.split('T')[0]}** → **${data.date_range?.end?.split('T')[0]}**\n\n`;
+  Object.entries(data.summary||{}).forEach(([m,s]) => {
+    reply += `**${m.toUpperCase()}**\n`;
+    if (s.total!=null) reply += `• Total: ${s.unit||''}${fmtVal(s.total)}\n`;
+    reply += `• Average: ${s.unit||''}${fmtVal(s.avg)}\n`;
+    reply += `• Range: ${s.unit||''}${fmtVal(s.min)} → ${fmtVal(s.max)}\n`;
+    reply += `• Trend: **${s.trend?.toUpperCase()}** ${s.trend==='up'?'📈':s.trend==='down'?'📉':'➡'}\n\n`;
+  });
+  const ins = await api('POST','/api/insights',{analysis_result:data,insight_type:'detailed'});
+  if (ins.insights?.length) {
+    reply += '**Key Patterns:**\n';
+    ins.insights.slice(0,3).forEach(i => reply += `• ${i}\n`);
+  }
+  return reply;
+}
+
+async function chatForecast(msg) {
+  const metric = currentSchema?.metrics?.[0]?.name;
+  if (!metric) return '⚠ No metrics found in current dataset.';
+  const data = await api('POST','/api/analyze/forecast',{
+    dataset_id: currentDatasetId,
+    metric_name: metric,
+    periods_ahead: 30,
+    confidence_interval: 0.95,
+    include_historical: false
+  });
+  if (data.error) return `⚠ Forecast failed: ${data.error}`;
+  const fc = data.forecast || [];
+  const first = fc[0], last = fc[fc.length-1];
+  const chg = first && last ? ((last.predicted_value-first.predicted_value)/first.predicted_value*100).toFixed(1) : null;
+  let reply = `**🔮 30-DAY FORECAST · ${metric?.toUpperCase()}**\n\n`;
+  reply += `Method: **${data.method === 'ml_prophet' ? 'Prophet ML' : 'Linear Trend'}**\n`;
+  if (data.accuracy_metrics?.mape) reply += `Model Accuracy: MAPE = **${data.accuracy_metrics.mape.toFixed(1)}%**\n\n`;
+  reply += `• Start: **${fmtVal(first?.predicted_value)}** (${first?.date})\n`;
+  reply += `• End: **${fmtVal(last?.predicted_value)}** (${last?.date})\n`;
+  if (chg) reply += `• Expected Change: **${chg > 0 ? '+' : ''}${chg}%** ${chg > 0 ? '📈' : '📉'}\n`;
+  reply += `• Confidence: **${(data.confidence_level*100)||95}%** interval\n\n`;
+  reply += `_⚠ Forecasts are statistical estimates. External factors not included._\n`;
+  const ins = await api('POST','/api/insights',{analysis_result:data,insight_type:'executive'});
+  if (ins.insights?.length) {
+    reply += '\n**Planning Implications:**\n';
+    ins.insights.forEach(i => reply += `• ${i}\n`);
+  }
+  return reply;
+}
+
+async function chatAnomalies(msg) {
+  const metric = currentSchema?.metrics?.[0]?.name;
+  if (!metric) return '⚠ No metrics found.';
+  const data = await api('POST','/api/analyze/anomalies',{
+    dataset_id: currentDatasetId,
+    metric_name: metric,
+    sensitivity: 2.0,
+    min_anomaly_score: 0.7
+  });
+  if (data.error) return `⚠ Anomaly scan failed: ${data.error}`;
+  const anomalies = data.anomalies || [];
+  let reply = `**⚠ ANOMALY DETECTION · ${metric?.toUpperCase()}**\n\n`;
+  reply += `Scanned **${data.total_data_points}** data points\n`;
+  reply += `Found **${anomalies.length}** anomalies (**${data.anomaly_rate?.toFixed(1)}%** rate)\n\n`;
+  if (anomalies.length) {
+    const critical = anomalies.filter(a=>a.severity==='critical');
+    const high = anomalies.filter(a=>a.severity==='high');
+    if (critical.length) reply += `🔴 **Critical:** ${critical.length} event${critical.length>1?'s':''}\n`;
+    if (high.length) reply += `🟠 **High:** ${high.length} event${high.length>1?'s':''}\n`;
+    reply += '\n**Top Anomalies:**\n';
+    anomalies.slice(0,3).forEach(a => {
+      reply += `• **${a.date}**: ${fmtVal(a.actual_value)} (${a.deviation_percent?.toFixed(1)}% ${a.direction} normal) — ${a.severity?.toUpperCase()}\n`;
+    });
+    const ins = await api('POST','/api/insights',{analysis_result:data,insight_type:'detailed'});
+    if (ins.insights?.length) {
+      reply += '\n**Analysis:**\n';
+      ins.insights.slice(0,2).forEach(i => reply += `• ${i}\n`);
+    }
+  } else {
+    reply += `✅ **No significant anomalies detected.** Data is within normal bounds.`;
+  }
+  return reply;
+}
+
+async function chatSeasonality(msg) {
+  const metric = currentSchema?.metrics?.[0]?.name;
+  if (!metric) return '⚠ No metrics found.';
+  const data = await api('POST','/api/analyze/seasonality',{
+    dataset_id: currentDatasetId, metric_names: [metric]
+  });
+  if (data.error) return `⚠ Seasonality analysis failed: ${data.error}`;
+  const dow = data.patterns?.day_of_week || [];
+  const mon = data.patterns?.month || [];
+  let reply = `**◌ SEASONAL PATTERNS · ${metric?.toUpperCase()}**\n\n`;
+  reply += `Overall average: **${fmtVal(data.overall_average)}**\n\n`;
+  if (dow.length) {
+    const best = dow.reduce((a,b)=>b.avg_value>a.avg_value?b:a);
+    const worst = dow.reduce((a,b)=>b.avg_value<a.avg_value?b:a);
+    reply += `**Day-of-Week Pattern:**\n`;
+    reply += `• Best: **${best.day}** (+${best.vs_overall_percent.toFixed(1)}%)\n`;
+    reply += `• Worst: **${worst.day}** (${worst.vs_overall_percent.toFixed(1)}%)\n\n`;
+  }
+  if (mon.length) {
+    const best = mon.reduce((a,b)=>b.avg_value>a.avg_value?b:a);
+    const worst = mon.reduce((a,b)=>b.avg_value<a.avg_value?b:a);
+    reply += `**Monthly Pattern:**\n`;
+    reply += `• Strongest month: **${best.month}** (+${best.vs_overall_percent.toFixed(1)}%)\n`;
+    reply += `• Weakest month: **${worst.month}** (${worst.vs_overall_percent.toFixed(1)}%)\n\n`;
+  }
+  if (data.insights?.length) {
+    reply += '**Insights:**\n';
+    data.insights.forEach(i => reply += `• ${i}\n`);
+  }
+  return reply;
+}
+
+async function chatBreakdown(msg) {
+  if (!currentSchema?.dimensions?.length) return '⚠ No dimensions found in this dataset for breakdown analysis.';
+  const dim = currentSchema.dimensions[0].name;
+  const data = await api('POST','/api/analyze/breakdown',{
+    dataset_id: currentDatasetId,
+    dimension_name: dim,
+    top_n: 5
+  });
+  if (data.error) return `⚠ Breakdown failed: ${data.error}`;
+  const metric = data.metrics?.[0];
+  let reply = `**◫ TOP 5 · ${dim?.toUpperCase()} BREAKDOWN**\n\n`;
+  (data.data||[]).forEach((row,i) => {
+    reply += `${i+1}. **${row[dim]}**: ${fmtVal(row[metric])}\n`;
+  });
+  const total = data.summary?.metrics?.[metric]?.total;
+  if (total) reply += `\nTotal across all: **${fmtVal(total)}**\n`;
+  const ins = await api('POST','/api/insights',{analysis_result:data,insight_type:'executive'});
+  if (ins.insights?.length) {
+    reply += '\n**Key Takeaways:**\n';
+    ins.insights.forEach(i => reply += `• ${i}\n`);
+  }
+  return reply;
+}
+
+async function chatInsights(msg) {
+  const data = await api('POST','/api/analyze/kpi',{dataset_id:currentDatasetId});
+  const ins = await api('POST','/api/insights',{analysis_result:data,insight_type:'detailed'});
+  if (ins.error || !ins.insights?.length) return '⚠ Could not generate insights.';
+  let reply = `**✦ AI ANALYTICAL INSIGHTS**\n\n`;
+  ins.insights.forEach((i,idx) => reply += `${idx+1}. ${i}\n\n`);
+  return reply;
+}
+
+async function chatSchema() {
+  const s = currentSchema;
+  if (!s) return '⚠ No schema detected.';
+  let reply = `**⬡ DATASET SCHEMA: ${s.dataset_name||s.dataset_id}**\n\n`;
+  reply += `**Time Column:** ${s.time_column?.column_name} (${s.time_column?.granularity})\n`;
+  reply += `**Rows:** ${fmt(s.row_count||0)}\n`;
+  reply += `**Date Range:** ${s.date_range_start?.split('T')[0]||'—'} → ${s.date_range_end?.split('T')[0]||'—'}\n\n`;
+  reply += `**📊 Metrics (${s.metrics?.length||0}):**\n`;
+  (s.metrics||[]).forEach(m => reply += `• **${m.name}** — ${m.metric_type}, ${m.aggregation}, ${m.direction}\n`);
+  reply += `\n**🏷 Dimensions (${s.dimensions?.length||0}):**\n`;
+  (s.dimensions||[]).length ? s.dimensions.forEach(d => reply += `• **${d.name}** (${d.data_type})\n`) : reply += '• None detected\n';
+  return reply;
+}
+
+async function chatQuality() {
+  const preview = await api('GET', `/api/preview/${currentDatasetId}?limit=5`);
+  let reply = `**🔍 DATA QUALITY REPORT**\n\n`;
+  reply += `**Rows:** ${fmt(preview.total_rows||0)}\n`;
+  reply += `**Columns:** ${(preview.columns||[]).length}\n\n`;
+  reply += `**Columns:**\n${(preview.columns||[]).map(c=>`• ${c}`).join('\n')}\n\n`;
+  reply += `**Sample Data (first 5 rows):**\n`;
+  if (preview.rows?.length) {
+    const cols = Object.keys(preview.rows[0]);
+    preview.rows.slice(0,3).forEach((row,i) => {
+      reply += `Row ${i+1}: ${cols.slice(0,3).map(c=>`${c}=${row[c]}`).join(', ')}\n`;
+    });
+  }
+  return reply;
+}
+
+async function chatGeneral(msg) {
+  // Try to answer with KPI overview as default context
+  const kpiData = await api('POST','/api/analyze/kpi',{dataset_id:currentDatasetId});
+  const insData = await api('POST','/api/insights',{
+    analysis_result: { ...kpiData, user_question: msg },
+    insight_type: 'detailed'
+  });
+  let reply = `I analyzed your dataset to answer: _"${msg}"_\n\n`;
+  if (insData.insights?.length) {
+    insData.insights.forEach(i => reply += `• ${i}\n`);
+  } else if (kpiData.kpis?.length) {
+    reply += `Here's what I found in your data:\n\n`;
+    kpiData.kpis.slice(0,3).forEach(k => {
+      reply += `**${k.metric}**: ${k.unit||''}${fmtVal(k.current_value)}`;
+      if (k.change_percent) reply += ` (${k.change_percent>0?'+':''}${k.change_percent?.toFixed(1)}%)`;
+      reply += '\n';
+    });
+  }
+  reply += `\n_Try asking about: trends, forecast, anomalies, seasonality, or breakdowns._`;
+  return reply;
+}
+
+function addUserMessage(text) {
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.innerHTML = `<div class="msg-avatar">👤</div>
+    <div><div class="msg-bubble">${escHtml(text)}</div>
+    <div class="msg-time">${time}</div></div>`;
+  document.getElementById('chatHistory').appendChild(el);
+  scrollChat();
+}
+
+function addBotMessage(text) {
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const el = document.createElement('div');
+  el.className = 'msg bot';
+  el.innerHTML = `<div class="msg-avatar">⬡</div>
+    <div><div class="msg-bubble">${mdToHtml(text)}</div>
+    <div class="msg-time">NEXUS · ${time}</div></div>`;
+  document.getElementById('chatHistory').appendChild(el);
+  scrollChat();
+}
+
+function addTyping() {
+  const id = 'typing_' + Date.now();
+  const el = document.createElement('div');
+  el.className = 'msg bot'; el.id = id;
+  el.innerHTML = `<div class="msg-avatar">⬡</div>
+    <div><div class="msg-bubble"><div class="typing">
+      <span></span><span></span><span></span>
+    </div></div></div>`;
+  document.getElementById('chatHistory').appendChild(el);
+  scrollChat();
+  return id;
+}
+
+function removeTyping(id) {
+  document.getElementById(id)?.remove();
+}
+
+function scrollChat() {
+  const h = document.getElementById('chatHistory');
+  h.scrollTop = h.scrollHeight;
+}
+
+function clearChat() {
+  chatContext = [];
+  const h = document.getElementById('chatHistory');
+  h.innerHTML = '';
+  addBotMessage('Chat cleared. Ready for new questions about your data.');
+}
+
+// ── POPULATE SELECTS ──────────────────────────────────────
+function populateAllSelects() {
+  populateMetricSelects();
+  populateDimSelects();
+}
+
+function populateMetricSelects() {
+  if (!currentSchema) return;
+  const metrics = currentSchema.metrics || [];
+  const opts = metrics.map(m=>`<option value="${m.name}">${m.name.toUpperCase()}</option>`).join('');
+  const multiOpts = metrics.map(m=>`<option value="${m.name}" selected>${m.name.toUpperCase()}</option>`).join('');
+  ['fc-metric','an-metric','se-metric','ins-metric'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts || '<option value="">No metrics</option>';
+  });
+  const tsEl = document.getElementById('ts-metrics');
+  if (tsEl) tsEl.innerHTML = multiOpts || '<option value="">No metrics</option>';
+}
+
+function populateDimSelects() {
+  if (!currentSchema) return;
+  const dims = currentSchema.dimensions || [];
+  const opts = dims.map(d=>`<option value="${d.name}">${d.name.toUpperCase()}</option>`).join('');
+  const el = document.getElementById('bd-dim');
+  if (el) el.innerHTML = opts || '<option value="">No dimensions</option>';
+}
+
+// ── CHART OPTIONS ─────────────────────────────────────────
+function chartOpts(type) {
+  return {
+    responsive: true,
+    interaction: { mode:'index', intersect:false },
+    plugins: {
+      legend: {
+        labels: { color:'rgba(180,220,255,.6)', font:{family:'Share Tech Mono',size:10},
+          boxWidth:12, padding:16 }
+      },
+      tooltip: {
+        backgroundColor:'rgba(8,15,26,.95)', borderColor:'rgba(0,200,255,.2)',
+        borderWidth:1, titleColor:'#00c8ff', bodyColor:'rgba(180,220,255,.8)',
+        titleFont:{family:'Orbitron',size:10}, bodyFont:{family:'Share Tech Mono',size:11},
+        padding:10, callbacks:{
+          label: ctx => ` ${ctx.dataset.label}: ${fmtVal(ctx.raw)}`
+        }
+      }
+    },
+    scales: type === 'scatter' ? {
+      x:{ticks:{color:'var(--t3)',font:{family:'Share Tech Mono',size:9}},
+        grid:{color:'rgba(0,200,255,.04)'},border:{color:'rgba(0,200,255,.1)'}},
+      y:{ticks:{color:'var(--t3)',font:{family:'Share Tech Mono',size:9},callback:v=>fmtVal(v)},
+        grid:{color:'rgba(0,200,255,.04)'},border:{color:'rgba(0,200,255,.1)'}}
+    } : {
+      x:{ticks:{color:'rgba(100,160,200,.5)',font:{family:'Share Tech Mono',size:9},maxTicksLimit:8},
+        grid:{color:'rgba(0,200,255,.04)'},border:{color:'rgba(0,200,255,.08)'}},
+      y:{ticks:{color:'rgba(100,160,200,.5)',font:{family:'Share Tech Mono',size:9},callback:v=>fmtVal(v)},
+        grid:{color:'rgba(0,200,255,.04)'},border:{color:'rgba(0,200,255,.08)'}}
+    },
+    animation: { duration:800, easing:'easeOutCubic' }
+  };
+}
+
+// ── UTILITIES ─────────────────────────────────────────────
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  return new Intl.NumberFormat().format(Math.round(n));
+}
+
+function fmtVal(n) {
+  if (n == null || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (abs >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (abs >= 1e3) return (n/1e3).toFixed(1)+'K';
+  if (abs < 1 && abs > 0) return n.toFixed(3);
+  return n.toFixed(2);
+}
+
+function setLoading(id) {
+  document.getElementById(id).innerHTML = `<div style="text-align:center;padding:40px">
+    <div class="ldots"><span></span><span></span><span></span></div>
+    <div class="text-dim mono mt12" style="font-size:10px;letter-spacing:2px">PROCESSING...</div></div>`;
+}
+
+function renderEmpty(id, msg) {
+  document.getElementById(id).innerHTML = `<div class="empty">
+    <div class="empty-ico">⚠</div>
+    <div class="empty-title">${msg||'NO DATA'}</div></div>`;
+}
+
+function toast(msg, type='inf') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = {ok:'✓', er:'✕', inf:'◈', wa:'⚠'};
+  el.innerHTML = `<span style="font-size:14px">${icons[type]||'●'}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'all .3s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(120%)';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function mdToHtml(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--t1)">$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/_(.+?)_/g,'<em style="color:var(--t3)">$1</em>')
+    .replace(/`(.+?)`/g,'<code style="font-family:var(--fm);background:var(--deep);padding:1px 5px;border-radius:3px;font-size:11px">$1</code>')
+    .replace(/\n/g,'<br/>');
+}
+
+// ── INIT ──────────────────────────────────────────────────
+(async () => {
+  checkHealth();
+  setInterval(checkHealth, 60000);
+
+  // Try to load existing datasets on startup
+  setTimeout(async () => {
+    const ds = await api('GET', '/api/datasets');
+    if (ds.datasets?.length) {
+      document.getElementById('dsCount').textContent = ds.datasets.length;
+      const first = ds.datasets[0];
+      currentDatasetId = first.dataset_id;
+      const shortName = first.dataset_id.slice(0, 14);
+      document.getElementById('curDsName').textContent = shortName;
+      const schema = await api('GET', `/api/schema/${first.dataset_id}`);
+      if (schema && !schema.error && schema.time_column) {
+        currentSchema = schema;
+        populateAllSelects();
+        toast(`Dataset ready: ${first.dataset_id}`, 'inf');
+        // Auto-load dashboard
+        loadDashboard();
+        navigate('dashboard');
+      }
+    }
+  }, 800);
+})();
+</script>
+</body>
+</html>

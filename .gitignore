@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.DS_Store
+
+# Temp files
+temp_*.csv
+temp_*.xlsx
+temp_*.json
+*.tmp
+
+# Logs
+*.log
+logs/
+
+# Data uploads (don't push user data)
+uploads/
+data/
