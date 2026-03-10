@@ -16,10 +16,9 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
-from src.analytics.schema import SemanticSchema, MetricDefinition, DimensionDefinition
-from src.data.smart_detector import SmartSchemaDetector
-from src.data.normalizer import DataNormalizer
-
+from analytics.schema import SemanticSchema, MetricDefinition, DimensionDefinition
+from data.smart_detector import SmartSchemaDetector
+from data.normalizer import DataNormalizer
 
 class AnalyticsAnalyzer:
     """
