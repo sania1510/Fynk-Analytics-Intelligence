@@ -14,10 +14,10 @@ import uuid
 from datetime import datetime
 
 # Import backend services
-from src.data.loader import DataLoader
-from src.analytics.schema import SemanticSchema
-from src.analytics.analyzer import AnalyticsAnalyzer
-from src.analytics.insights import InsightsGenerator
+from data.loader import DataLoader
+from analytics.schema import SemanticSchema
+from analytics.analyzer import AnalyticsAnalyzer
+from analytics.insights import InsightsGenerator
 
 # Initialize router
 router = APIRouter()
