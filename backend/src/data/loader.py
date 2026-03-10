@@ -9,9 +9,9 @@ from pathlib import Path
 from datetime import datetime
 import json
 
-from src.analytics.schema import SemanticSchema
-from src.data.smart_detector import SmartSchemaDetector
-from src.data.normalizer import DataNormalizer
+from analytics.schema import SemanticSchema
+from data.smart_detector import SmartSchemaDetector
+from data.normalizer import DataNormalizer
 
 
 class DataLoader:
