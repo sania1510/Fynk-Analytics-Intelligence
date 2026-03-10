@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 
 # Import routers
-from src.api.routes import router as api_router
+from api.routes import router as api_router
 
 # Load environment variables
 load_dotenv()
