@@ -27,7 +27,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:8080",
-        "https://fynk-analytics-intelligence-2.onrender.com/",# Vite dev server
+        "https://fynk-analytics-intelligence-2.onrender.com",# Vite dev server
         "http://localhost:5173",  # Alternative Vite port
         "http://localhost:3000",  # Create React App
         "http://127.0.0.1:8080",
